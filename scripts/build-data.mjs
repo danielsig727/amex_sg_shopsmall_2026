@@ -79,18 +79,26 @@ function getAnchor(locationName, address) {
   return [Number(latitude.toFixed(6)), Number(longitude.toFixed(6))];
 }
 
+function spreadFromCell(latitude, longitude, position) {
+  if (position === 0) return [latitude, longitude];
+  const angle = position * 2.399963229728653;
+  const distance = 0.00006 * Math.sqrt(position);
+  const offsetLatitude = distance * Math.cos(angle);
+  const offsetLongitude = (distance * Math.sin(angle)) / Math.cos(latitude * (Math.PI / 180));
+  return [Number((latitude + offsetLatitude).toFixed(6)), Number((longitude + offsetLongitude).toFixed(6))];
+}
+
 export function buildMerchantDataset(csvText) {
   const [headers, ...rows] = parseCsv(csvText);
   const positions = Object.fromEntries(headers.map((header, index) => [header, index]));
   const field = (row, name) => row[positions[name]]?.trim() ?? '';
 
-  return {
-    generatedAt: 'static-location-cells-v1',
-    merchants: rows
-      .map((row, index) => {
+  const merchantCells = rows
+    .map((row, index) => {
         const locationName = field(row, 'mall_or_street_name');
         const address = field(row, 'address');
-        const [latitude, longitude] = getAnchor(locationName, address);
+        const locationCell = normalize(locationName || address);
+        const [cellLatitude, cellLongitude] = getAnchor(locationName, address);
         return {
           id: `merchant-${index + 1}`,
           name: field(row, 'merchant_name'),
@@ -98,11 +106,24 @@ export function buildMerchantDataset(csvText) {
           locationType: field(row, 'mall_or_street'),
           locationName,
           address,
-          latitude,
-          longitude,
+          locationCell,
+          cellLatitude,
+          cellLongitude,
         };
-      })
-      .filter((merchant) => merchant.name && merchant.address),
+    })
+    .filter((merchant) => merchant.name && merchant.address);
+
+  const positionByCell = new Map();
+  const merchants = merchantCells.map((merchant) => {
+    const position = positionByCell.get(merchant.locationCell) ?? 0;
+    positionByCell.set(merchant.locationCell, position + 1);
+    const [latitude, longitude] = spreadFromCell(merchant.cellLatitude, merchant.cellLongitude, position);
+    return { ...merchant, latitude, longitude };
+  });
+
+  return {
+    generatedAt: 'static-location-cells-v2',
+    merchants,
   };
 }
 

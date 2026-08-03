@@ -16,7 +16,7 @@ test('buildMerchantDataset creates a stable Singapore map record', () => {
   assert.ok(dataset.merchants[0].longitude >= 103.6 && dataset.merchants[0].longitude <= 104.1);
 });
 
-test('merchants sharing a location use one map anchor', () => {
+test('merchants sharing a location cell receive stable distinct map positions', () => {
   const csv = [
     'mall_or_street,mall_or_street_name,merchant_category,merchant_name,address',
     'In-Mall,Westgate,RESTAURANT,Cafe One,3 Gateway Drive Singapore 608532',
@@ -24,8 +24,13 @@ test('merchants sharing a location use one map anchor', () => {
   ].join('\n');
   const { merchants } = buildMerchantDataset(csv);
 
+  assert.equal(merchants[0].locationCell, merchants[1].locationCell);
+  assert.notDeepEqual(
+    [merchants[0].latitude, merchants[0].longitude],
+    [merchants[1].latitude, merchants[1].longitude],
+  );
   assert.deepEqual(
-    merchants.map(({ latitude, longitude }) => [latitude, longitude]),
-    [[merchants[0].latitude, merchants[0].longitude], [merchants[0].latitude, merchants[0].longitude]],
+    [merchants[0].cellLatitude, merchants[0].cellLongitude],
+    [merchants[1].cellLatitude, merchants[1].cellLongitude],
   );
 });

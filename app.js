@@ -18,16 +18,12 @@ const elements = {
   locateButton: document.querySelector('#locate-button'),
 };
 
-const state = { merchants: [], activeCategory: 'All', selectedLocation: null, markerLayer: L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 42 }) };
+const state = { merchants: [], activeCategory: 'All', selectedMerchant: null, markerLayer: L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 42, disableClusteringAtZoom: 16 }) };
 map.addLayer(state.markerLayer);
 
 function setStatus(message, isError = false) {
   elements.status.textContent = message;
   elements.status.classList.toggle('is-error', isError);
-}
-
-function locationKey(merchant) {
-  return `${merchant.latitude},${merchant.longitude}`;
 }
 
 function visibleMerchants() {
@@ -38,18 +34,10 @@ function visibleMerchants() {
   ));
 }
 
-function groupByLocation(merchants) {
-  return merchants.reduce((locations, merchant) => {
-    const key = locationKey(merchant);
-    (locations.get(key) ?? locations.set(key, []).get(key)).push(merchant);
-    return locations;
-  }, new Map());
-}
-
-function selectLocation(key, shouldPan = false) {
-  state.selectedLocation = key;
+function selectMerchant(id, shouldPan = false) {
+  state.selectedMerchant = id;
   if (shouldPan) {
-    const merchant = state.merchants.find((item) => locationKey(item) === key);
+    const merchant = state.merchants.find((item) => item.id === id);
     if (merchant) map.setView([merchant.latitude, merchant.longitude], Math.max(map.getZoom(), 15));
   }
   renderDirectory();
@@ -57,15 +45,11 @@ function selectLocation(key, shouldPan = false) {
 
 function renderMarkers(merchants) {
   state.markerLayer.clearLayers();
-  groupByLocation(merchants).forEach((atLocation) => {
-    const [first] = atLocation;
-    const key = locationKey(first);
-    const names = atLocation.slice(0, 5).map((merchant) => `<li>${escapeHtml(merchant.name)}</li>`).join('');
-    const label = atLocation.length > 1 ? `${atLocation.length}` : '1';
-    const icon = L.divIcon({ className: 'location-pin', html: `<span>${label}</span>`, iconSize: [34, 34] });
-    const marker = L.marker([first.latitude, first.longitude], { icon, title: `${atLocation.length} merchant${atLocation.length === 1 ? '' : 's'} at ${first.locationName}` });
-    marker.bindPopup(`<div class="merchant-popup"><h2>${escapeHtml(first.locationName)}</h2><p>${atLocation.length} merchant${atLocation.length === 1 ? '' : 's'}</p><ul>${names}</ul></div>`);
-    marker.on('click', () => selectLocation(key));
+  merchants.forEach((merchant) => {
+    const icon = L.divIcon({ className: 'location-pin', html: '<span>•</span>', iconSize: [34, 34] });
+    const marker = L.marker([merchant.latitude, merchant.longitude], { icon, title: `${merchant.name} at ${merchant.locationName}` });
+    marker.bindPopup(`<div class="merchant-popup"><h2>${escapeHtml(merchant.name)}</h2><p>${escapeHtml(merchant.locationName)}</p><p>${escapeHtml(merchant.address)}</p></div>`);
+    marker.on('click', () => selectMerchant(merchant.id));
     state.markerLayer.addLayer(marker);
   });
 }
@@ -82,13 +66,12 @@ function renderMerchantList(merchants) {
   const fragment = document.createDocumentFragment();
   merchants.forEach((merchant) => {
     const card = elements.template.content.firstElementChild.cloneNode(true);
-    const key = locationKey(merchant);
     card.querySelector('.merchant-category').textContent = merchant.category;
     card.querySelector('.merchant-name').textContent = merchant.name;
     card.querySelector('.merchant-location').textContent = merchant.locationName;
     card.querySelector('.merchant-address').textContent = merchant.address;
-    card.classList.toggle('is-selected', state.selectedLocation === key);
-    card.addEventListener('click', () => selectLocation(key, true));
+    card.classList.toggle('is-selected', state.selectedMerchant === merchant.id);
+    card.addEventListener('click', () => selectMerchant(merchant.id, true));
     fragment.append(card);
   });
   elements.list.append(fragment);
@@ -105,7 +88,7 @@ function renderFilters() {
     button.classList.toggle('is-active', state.activeCategory === category);
     button.addEventListener('click', () => {
       state.activeCategory = category;
-      state.selectedLocation = null;
+      state.selectedMerchant = null;
       renderDirectory();
     });
     elements.filters.append(button);
