@@ -3,7 +3,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SINGAPORE_BOUNDS = { south: 1.255, north: 1.472, west: 103.605, east: 104.04 };
+// Unrecognised location labels use a deliberately conservative, land-centred
+// envelope. A national bounding box would also cover Johor and open water.
+const FALLBACK_BOUNDS = { south: 1.3, north: 1.405, west: 103.73, east: 103.93 };
 
 const KNOWN_ANCHORS = {
   'westgate': [1.3343, 103.7421],
@@ -74,8 +76,8 @@ function getAnchor(locationName, address) {
   if (KNOWN_ANCHORS[key]) return KNOWN_ANCHORS[key];
 
   const seed = hash(key);
-  const latitude = SINGAPORE_BOUNDS.south + ((seed & 0xffff) / 0xffff) * (SINGAPORE_BOUNDS.north - SINGAPORE_BOUNDS.south);
-  const longitude = SINGAPORE_BOUNDS.west + (((seed >>> 16) & 0xffff) / 0xffff) * (SINGAPORE_BOUNDS.east - SINGAPORE_BOUNDS.west);
+  const latitude = FALLBACK_BOUNDS.south + ((seed & 0xffff) / 0xffff) * (FALLBACK_BOUNDS.north - FALLBACK_BOUNDS.south);
+  const longitude = FALLBACK_BOUNDS.west + (((seed >>> 16) & 0xffff) / 0xffff) * (FALLBACK_BOUNDS.east - FALLBACK_BOUNDS.west);
   return [Number(latitude.toFixed(6)), Number(longitude.toFixed(6))];
 }
 
@@ -122,7 +124,7 @@ export function buildMerchantDataset(csvText) {
   });
 
   return {
-    generatedAt: 'static-location-cells-v2',
+    generatedAt: 'static-location-cells-v3',
     merchants,
   };
 }

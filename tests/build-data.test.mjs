@@ -34,3 +34,14 @@ test('merchants sharing a location cell receive stable distinct map positions', 
     [merchants[1].cellLatitude, merchants[1].cellLongitude],
   );
 });
+
+test('unrecognised locations stay in the conservative Singapore fallback envelope', () => {
+  const csv = [
+    'mall_or_street,mall_or_street_name,merchant_category,merchant_name,address',
+    'Street,Unrecognised Test Place,SERVICES,Test Merchant,1 Example Street Singapore 000001',
+  ].join('\n');
+  const [merchant] = buildMerchantDataset(csv).merchants;
+
+  assert.ok(merchant.latitude >= 1.3 && merchant.latitude <= 1.405);
+  assert.ok(merchant.longitude >= 103.73 && merchant.longitude <= 103.93);
+});
