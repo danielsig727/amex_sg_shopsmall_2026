@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Explore Amex small merchants in Singapore." />
+    <title>Amex Small Merchant Map · Singapore</title>
+    <link rel="preconnect" href="https://unpkg.com" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#map" aria-label="Amex Small Merchant Map home">
+        <span class="brand-mark">AMEX</span>
+        <span>Small Merchant Map <em>Singapore</em></span>
+      </a>
+      <form id="search-form" class="search-form" role="search">
+        <label class="visually-hidden" for="search-input">Find an address in Singapore</label>
+        <input id="search-input" type="search" placeholder="Search an address or neighbourhood" autocomplete="street-address" />
+        <button type="submit">Find on map</button>
+      </form>
+      <button id="locate-button" class="location-button" type="button">◎ Use my location</button>
+    </header>
+
+    <main class="app-shell">
+      <section class="map-panel" aria-label="Map of Singapore merchants">
+        <div id="map" aria-label="Interactive map of Amex small merchants in Singapore"></div>
+        <div class="map-caption">Pins represent merchant locations. Zoom in to explore the area.</div>
+      </section>
+
+      <aside class="directory-panel" aria-label="Merchants in current map view">
+        <div class="directory-intro">
+          <p class="eyebrow">In this map view</p>
+          <h1><span id="merchant-count">Loading</span> merchants</h1>
+          <p id="status" class="status" aria-live="polite">Loading the directory…</p>
+        </div>
+        <div id="category-filters" class="category-filters" aria-label="Filter by category"></div>
+        <div id="merchant-list" class="merchant-list" aria-live="polite"></div>
+      </aside>
+    </main>
+
+    <template id="merchant-template">
+      <button class="merchant-card" type="button">
+        <span class="merchant-category"></span>
+        <strong class="merchant-name"></strong>
+        <span class="merchant-location"></span>
+        <span class="merchant-address"></span>
+      </button>
+    </template>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
