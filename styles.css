@@ -51,7 +51,7 @@ button { cursor: pointer; }
 h1 { margin: 0; font-size: 1.46rem; letter-spacing: -.04em; }
 .status { min-height: 1.25em; margin: 7px 0 0; color: var(--muted); font-size: .86rem; }
 .status.is-error { color: #aa3d32; }
-.category-filters { display: flex; gap: 7px; overflow-x: auto; padding: 13px 20px; border-bottom: 1px solid var(--line); }
+.category-filters { flex: none; display: flex; gap: 7px; overflow-x: auto; padding: 13px 20px; border-bottom: 1px solid var(--line); }
 .filter-chip { flex: none; padding: 7px 10px; border: 1px solid #d8e1e9; border-radius: 99px; background: white; color: #4e6378; font-size: .76rem; font-weight: 700; }
 .filter-chip.is-active { border-color: var(--blue); background: #e8f3fb; color: var(--deep-blue); }
 .merchant-list { overflow: auto; padding: 8px 13px 22px; }
