@@ -62,6 +62,10 @@ function normalize(value) {
   return value.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+function coordinateKey(locationType, locationCell, address) {
+  return locationType === 'Street' ? `address:${normalize(address)}` : `location:${locationCell}`;
+}
+
 function hash(value) {
   let result = 2166136261;
   for (const character of value) {
@@ -90,7 +94,7 @@ function spreadFromCell(latitude, longitude, position) {
   return [Number((latitude + offsetLatitude).toFixed(6)), Number((longitude + offsetLongitude).toFixed(6))];
 }
 
-export function buildMerchantDataset(csvText) {
+export function buildMerchantDataset(csvText, geocodes = {}) {
   const [headers, ...rows] = parseCsv(csvText);
   const positions = Object.fromEntries(headers.map((header, index) => [header, index]));
   const field = (row, name) => row[positions[name]]?.trim() ?? '';
@@ -109,6 +113,7 @@ export function buildMerchantDataset(csvText) {
           locationName,
           address,
           locationCell,
+          coordinateKey: coordinateKey(field(row, 'mall_or_street'), locationCell, address),
           cellLatitude,
           cellLongitude,
         };
@@ -117,10 +122,14 @@ export function buildMerchantDataset(csvText) {
 
   const positionByCell = new Map();
   const merchants = merchantCells.map((merchant) => {
-    const position = positionByCell.get(merchant.locationCell) ?? 0;
-    positionByCell.set(merchant.locationCell, position + 1);
-    const [latitude, longitude] = spreadFromCell(merchant.cellLatitude, merchant.cellLongitude, position);
-    return { ...merchant, latitude, longitude };
+    const cached = geocodes[merchant.coordinateKey];
+    const validated = cached && !cached.unresolved && Number.isFinite(cached.latitude) && Number.isFinite(cached.longitude) ? cached : null;
+    const cellLatitude = validated?.latitude ?? merchant.cellLatitude;
+    const cellLongitude = validated?.longitude ?? merchant.cellLongitude;
+    const position = positionByCell.get(merchant.coordinateKey) ?? 0;
+    positionByCell.set(merchant.coordinateKey, position + 1);
+    const [latitude, longitude] = spreadFromCell(cellLatitude, cellLongitude, position);
+    return { ...merchant, cellLatitude, cellLongitude, latitude, longitude, coordinateSource: validated ? 'onemap' : 'fallback' };
   });
 
   return {
@@ -131,7 +140,9 @@ export function buildMerchantDataset(csvText) {
 
 async function main() {
   const source = await readFile(resolve(ROOT, 'amex_sg_shop_small_merchant_directory.csv'), 'utf8');
-  const dataset = buildMerchantDataset(source);
+  const geocodePath = resolve(ROOT, 'data/geocodes.json');
+  const geocodes = await readFile(geocodePath, 'utf8').then(JSON.parse).then((data) => data.targets ?? {}).catch(() => ({}));
+  const dataset = buildMerchantDataset(source, geocodes);
   const destination = resolve(ROOT, 'data/merchants.json');
   await mkdir(dirname(destination), { recursive: true });
   await writeFile(destination, `${JSON.stringify(dataset)}\n`);

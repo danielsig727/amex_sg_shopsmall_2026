@@ -45,3 +45,26 @@ test('unrecognised locations stay in the conservative Singapore fallback envelop
   assert.ok(merchant.latitude >= 1.3 && merchant.latitude <= 1.405);
   assert.ok(merchant.longitude >= 103.73 && merchant.longitude <= 103.93);
 });
+
+test('validated OneMap coordinates override fallback coordinates', () => {
+  const csv = [
+    'mall_or_street,mall_or_street_name,merchant_category,merchant_name,address',
+    'Street,Arab Street,RESTAURANT,Test Merchant,64 ARAB STREET SINGAPORE 199761',
+  ].join('\n');
+  const geocodes = { 'address:64 arab street singapore 199761': { latitude: 1.301664, longitude: 103.858846 } };
+  const [merchant] = buildMerchantDataset(csv, geocodes).merchants;
+
+  assert.equal(merchant.coordinateSource, 'onemap');
+  assert.deepEqual([merchant.latitude, merchant.longitude], [1.301664, 103.858846]);
+});
+
+test('unresolved geocodes remain explicitly unverified', () => {
+  const csv = [
+    'mall_or_street,mall_or_street_name,merchant_category,merchant_name,address',
+    'Street,Unknown Street,RETAIL,Test Merchant,1 UNKNOWN STREET SINGAPORE 000000',
+  ].join('\n');
+  const geocodes = { 'address:1 unknown street singapore 000000': { unresolved: true } };
+  const [merchant] = buildMerchantDataset(csv, geocodes).merchants;
+
+  assert.equal(merchant.coordinateSource, 'fallback');
+});

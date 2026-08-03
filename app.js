@@ -29,7 +29,8 @@ function setStatus(message, isError = false) {
 function visibleMerchants() {
   const bounds = map.getBounds();
   return state.merchants.filter((merchant) => (
-    (state.activeCategory === 'All' || merchant.category === state.activeCategory)
+    merchant.coordinateSource === 'onemap'
+    && (state.activeCategory === 'All' || merchant.category === state.activeCategory)
     && bounds.contains([merchant.latitude, merchant.longitude])
   ));
 }
@@ -97,8 +98,9 @@ function renderFilters() {
 
 function renderDirectory() {
   const merchants = visibleMerchants();
+  const verifiedCount = state.merchants.filter((merchant) => merchant.coordinateSource === 'onemap').length;
   elements.count.textContent = merchants.length.toLocaleString('en-SG');
-  setStatus(`${state.activeCategory === 'All' ? 'All categories' : state.activeCategory} · updated for the current map view`);
+  setStatus(`${state.activeCategory === 'All' ? 'All categories' : state.activeCategory} · ${verifiedCount.toLocaleString('en-SG')} OneMap-verified merchants total`);
   renderFilters();
   renderMarkers(merchants);
   renderMerchantList(merchants);
