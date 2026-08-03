@@ -137,14 +137,20 @@ At the start of `renderMarkers`, clear the lookup after clearing the layer. Afte
 state.markersByMerchantId.set(merchant.id, marker);
 ```
 
-After all markers have been added, ask the cluster layer to reveal the selected marker and reopen its popup. This covers directory selections whose marker is inside a cluster:
+When a directory item is selected, pan to at least zoom 16, where clustering is disabled:
+
+```js
+if (merchant) map.setView([merchant.latitude, merchant.longitude], Math.max(map.getZoom(), 16));
+```
+
+After all markers have been added, reopen the selected marker's popup:
 
 ```js
 const selectedMarker = state.markersByMerchantId.get(state.selectedMerchant);
-if (selectedMarker) {
-  state.markerLayer.zoomToShowLayer(selectedMarker, () => selectedMarker.openPopup());
-}
+if (selectedMarker) selectedMarker.openPopup();
 ```
+
+This avoids re-entering `renderDirectory()` during a marker-cluster animation, which would clear layers still referenced by `zoomToShowLayer()`.
 
 - [ ] **Step 3: Add place details and the Google Maps link to popup markup**
 
