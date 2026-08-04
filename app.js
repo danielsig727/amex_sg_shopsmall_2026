@@ -34,6 +34,7 @@ const elements = {
   sortButtons: [...document.querySelectorAll('[data-sort-mode]')],
   locateButton: document.querySelector('#locate-button'),
 };
+map.getPanes().mapPane.append(elements.distanceOriginReticle);
 
 const state = {
   merchants: [],
@@ -79,6 +80,14 @@ function mapCenterOrigin() {
 
 function updateDistanceOriginReticle() {
   elements.distanceOriginReticle.hidden = state.sortMode !== 'distance';
+  if (!elements.distanceOriginReticle.hidden) syncDistanceOriginReticle();
+}
+
+function syncDistanceOriginReticle() {
+  const mapRect = map.getContainer().getBoundingClientRect();
+  const mapPaneRect = map.getPanes().mapPane.getBoundingClientRect();
+  elements.distanceOriginReticle.style.left = `${(mapRect.width / 2) - (mapPaneRect.left - mapRect.left)}px`;
+  elements.distanceOriginReticle.style.top = `${(mapRect.height / 2) - (mapPaneRect.top - mapRect.top)}px`;
 }
 
 function selectMerchant(id, shouldPan = false) {
@@ -404,6 +413,8 @@ map.on('moveend', () => {
   const selectedMarker = state.markersByMerchantId.get(state.selectedMerchant);
   renderDirectory({ updateMarkers: !selectedMarker?.isPopupOpen() });
 });
+
+map.on('move zoom', syncDistanceOriginReticle);
 
 async function initializeDirectory() {
   try {
