@@ -27,7 +27,16 @@ Then visit [http://localhost:4173](http://localhost:4173).
 
 ## Deploy
 
-Publish the repository root to any static host, such as GitHub Pages, Netlify, Cloudflare Pages, or an S3 static website. No server, build step, or API key is required at deployment time.
+The repository includes a GitHub Actions workflow that tests the application and deploys it to GitHub Pages. Pushes to `master` deploy automatically after validation succeeds. To redeploy manually, open **Actions → Deploy to GitHub Pages → Run workflow**.
+
+Enable the site once in GitHub:
+
+1. Push `master` to GitHub.
+2. Open **Settings → Pages** in the repository.
+3. Set **Source** to **GitHub Actions**.
+4. Open the deployment URL shown by the workflow. Unless a custom domain is configured, this repository's project-site URL is [https://danielsig727.github.io/amex_sg_shopsmall_2026/](https://danielsig727.github.io/amex_sg_shopsmall_2026/).
+
+The workflow publishes a runtime-only artifact containing the HTML, JavaScript, CSS, and browser merchant dataset. It does not publish the source CSV, geocoding cache or report, scripts, tests, or documentation. Repository preparation does not change the GitHub Pages source setting itself.
 
 Map tiles come from OpenStreetMap. The address field uses the public Nominatim geocoder at runtime; it may be unavailable because of network conditions or service limits. Browser location uses the visitor's permission-controlled geolocation API. Both failures leave map browsing and the current-view list available.
 
