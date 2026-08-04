@@ -36,7 +36,7 @@ function numberedStreetQueries(address, locationName) {
 export function validationQueries({ locationType, locationName, address, name }) {
   const withoutPostal = address.replace(/\s+SINGAPORE\s+\d{6}\s*$/i, '').trim();
   const withoutUnit = withoutPostal.replace(/\s+#.*$/i, '').trim();
-  if (locationType !== 'Street') return unique([locationName, withoutUnit]);
+  if (locationType !== 'Street') return unique([withoutUnit, locationName]);
 
   const streetAddress = withoutUnit.match(STREET_ADDRESS)?.[0];
   const normalizedAddress = normalize(withoutUnit);

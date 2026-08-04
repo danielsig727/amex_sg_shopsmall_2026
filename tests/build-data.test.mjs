@@ -138,14 +138,23 @@ test('street validation strips malformed units and tries each building in a shar
   ]);
 });
 
-test('validation falls back to a mall address or a named street venue', () => {
+test('validation prefers a precise mall address over an ambiguous venue name', () => {
   assert.deepEqual(validationQueries({
     locationType: 'In-Mall',
     locationName: 'I12 Katong',
     address: '112 EAST COAST ROAD #01-04 SINGAPORE 428802',
   }), [
-    'I12 Katong',
     '112 EAST COAST ROAD',
+    'I12 Katong',
+  ]);
+
+  assert.deepEqual(validationQueries({
+    locationType: 'In-Mall & Building',
+    locationName: 'Tampines Mrt Station',
+    address: '20 TAMPINES CENTRAL 1 #01-20 SINGAPORE 529538',
+  }), [
+    '20 TAMPINES CENTRAL 1',
+    'Tampines Mrt Station',
   ]);
 
   assert.deepEqual(validationQueries({

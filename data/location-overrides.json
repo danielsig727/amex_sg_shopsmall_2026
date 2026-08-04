@@ -44,6 +44,24 @@
       "query": "8V24+44 Singapore",
       "source": "user-confirmed",
       "provider": "google-plus-code"
+    },
+    "location:custom house": {
+      "latitude": 1.28251199237403,
+      "longitude": 103.853497570374,
+      "matchedAddress": "70 COLLYER QUAY CUSTOMS HOUSE SINGAPORE 049323",
+      "matchedName": "CUSTOMS HOUSE",
+      "query": "70 Collyer Quay",
+      "source": "onemap-corrected",
+      "provider": "onemap"
+    },
+    "location:tampines mrt station": {
+      "latitude": 1.35330167637376,
+      "longitude": 103.945144586749,
+      "matchedAddress": "20 TAMPINES CENTRAL 1 TAMPINES MRT STATION (EW2) SINGAPORE 529538",
+      "matchedName": "TAMPINES MRT STATION (EW2)",
+      "query": "20 Tampines Central 1",
+      "source": "onemap-corrected",
+      "provider": "onemap"
     }
   }
 }
