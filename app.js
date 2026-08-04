@@ -1,4 +1,4 @@
-import { googleMapsSearchUrl } from './merchant-utils.mjs';
+import { googleMapsSearchUrl, revealClusteredMarker } from './merchant-utils.mjs?v=2';
 
 const DEFAULT_VIEW = [1.3521, 103.8198];
 const DEFAULT_ZOOM = 11;
@@ -24,6 +24,7 @@ const state = {
   merchants: [],
   activeCategory: 'All',
   selectedMerchant: null,
+  isRevealingSelection: false,
   markerLayer: L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 42, disableClusteringAtZoom: 19 }),
   markersByMerchantId: new Map(),
 };
@@ -45,6 +46,7 @@ function visibleMerchants() {
 
 function selectMerchant(id, shouldPan = false) {
   state.selectedMerchant = id;
+  state.isRevealingSelection = true;
   if (shouldPan) {
     const merchant = state.merchants.find((item) => item.id === id);
     if (merchant) map.setView([merchant.latitude, merchant.longitude], Math.max(map.getZoom(), 16));
@@ -72,7 +74,17 @@ function renderMarkers(merchants) {
     state.markerLayer.addLayer(marker);
   });
   const selectedMarker = state.markersByMerchantId.get(state.selectedMerchant);
-  if (selectedMarker) selectedMarker.openPopup();
+  if (selectedMarker) {
+    revealClusteredMarker(state.markerLayer, selectedMarker, () => {
+      if (state.markersByMerchantId.get(state.selectedMerchant) === selectedMarker) {
+        selectedMarker.openPopup();
+        state.isRevealingSelection = false;
+        renderDirectory({ updateMarkers: false });
+      }
+    });
+  } else {
+    state.isRevealingSelection = false;
+  }
 }
 
 function renderMerchantList(merchants) {
@@ -120,13 +132,13 @@ function renderFilters() {
   });
 }
 
-function renderDirectory() {
+function renderDirectory({ updateMarkers = true } = {}) {
   const merchants = visibleMerchants();
   const verifiedCount = state.merchants.filter((merchant) => merchant.coordinateSource === 'onemap').length;
   elements.count.textContent = merchants.length.toLocaleString('en-SG');
   setStatus(`${state.activeCategory === 'All' ? 'All categories' : state.activeCategory} · ${verifiedCount.toLocaleString('en-SG')} OneMap-verified merchants total`);
   renderFilters();
-  renderMarkers(merchants);
+  if (updateMarkers) renderMarkers(merchants);
   renderMerchantList(merchants);
 }
 
@@ -171,7 +183,7 @@ elements.locateButton.addEventListener('click', () => {
 });
 
 map.on('moveend', () => {
-  if (state.merchants.length) renderDirectory();
+  if (state.merchants.length && !state.isRevealingSelection) renderDirectory();
 });
 
 async function initializeDirectory() {
