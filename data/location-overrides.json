@@ -45,6 +45,51 @@
       "source": "user-confirmed",
       "provider": "google-plus-code"
     },
+    "address:17 temple street #01-02 singapore 079027": {
+      "latitude": 1.2824866,
+      "longitude": 103.8445808,
+      "matchedAddress": "17 TEMPLE STREET SINGAPORE 058563",
+      "matchedName": "BINLIN LINEN MANUFACTURERS",
+      "query": "Binlin Linen Manufacturers, 17 Temple Street",
+      "source": "externally-verified",
+      "provider": "waze"
+    },
+    "address:51a telok ayer street #01-01 singapore 048581": {
+      "latitude": 1.28286636225753,
+      "longitude": 103.849289233227,
+      "matchedAddress": "51 TELOK AYER STREET CHINA SQUARE FOOD CENTRE SINGAPORE 048441",
+      "matchedName": "CHINA SQUARE FOOD CENTRE",
+      "query": "51 Telok Ayer Street",
+      "source": "onemap-corrected",
+      "provider": "onemap"
+    },
+    "address:44/46 tanjong pagar road singapore 048616": {
+      "latitude": 1.27934860855414,
+      "longitude": 103.843652058129,
+      "matchedAddress": "46 TANJONG PAGAR ROAD TANJONG PAGAR CONSERVATION AREA SINGAPORE 088467",
+      "matchedName": "TANJONG PAGAR CONSERVATION AREA",
+      "query": "46 Tanjong Pagar Road 088467",
+      "source": "onemap-corrected",
+      "provider": "onemap"
+    },
+    "address:10 teck lim road - singapore 088386": {
+      "latitude": 1.28034408232035,
+      "longitude": 103.842016294188,
+      "matchedAddress": "10 TECK LIM ROAD SINGAPORE 088386",
+      "matchedName": "10 TECK LIM ROAD SINGAPORE 088386",
+      "query": "10 Teck Lim Road 088386",
+      "source": "onemap-corrected",
+      "provider": "onemap"
+    },
+    "address:51 amoy street - singapore 069877": {
+      "latitude": 1.28018816083591,
+      "longitude": 103.846828460044,
+      "matchedAddress": "51 AMOY STREET BRITISH EDUCATION CENTRE SINGAPORE 069877",
+      "matchedName": "BRITISH EDUCATION CENTRE",
+      "query": "51 Amoy Street 069877",
+      "source": "onemap-corrected",
+      "provider": "onemap"
+    },
     "location:custom house": {
       "latitude": 1.28251199237403,
       "longitude": 103.853497570374,

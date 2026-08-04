@@ -61,9 +61,11 @@ export function validationQuery(merchant) {
 }
 
 export function matchesLocation(match, locationName) {
-  const words = locationWords(locationName);
-  if (words.length === 0) return true;
+  const matchedAddress = normalize((match.matchedAddress ?? '').replace(/[^a-z0-9]+/gi, ' '));
+  const alternatives = locationName
+    .split(/\s+-\s+/)
+    .map((value) => normalize(value.replace(/[^a-z0-9]+/gi, ' ')))
+    .filter(Boolean);
 
-  const matchedText = normalize(`${match.matchedAddress ?? ''} ${match.matchedName ?? ''}`);
-  return words.some((word) => matchedText.includes(word));
+  return alternatives.length === 0 || alternatives.some((value) => matchedAddress.includes(value));
 }

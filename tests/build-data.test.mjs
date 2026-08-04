@@ -116,6 +116,9 @@ test('street validation includes a missing street name and rejects an unrelated 
   assert.equal(validationQuery(merchant), '33 Tras Street');
   assert.equal(matchesLocation({ matchedAddress: '768 WOODLANDS AVE 6 SINGAPORE 730768', matchedName: '33 CONVENIENCE MART' }, merchant.locationName), false);
   assert.equal(matchesLocation({ matchedAddress: '33 TRAS STREET SINGAPORE 078973', matchedName: 'TANJONG PAGAR CONSERVATION AREA' }, merchant.locationName), true);
+  assert.equal(matchesLocation({ matchedAddress: '17 CHOA CHU KANG STREET 51 CHEE SENG TEMPLE SINGAPORE 689337', matchedName: 'CHEE SENG TEMPLE' }, 'Temple Street'), false);
+  assert.equal(matchesLocation({ matchedAddress: '17 TEMPLE STREET SINGAPORE 058563', matchedName: 'KRETA AYER CONSERVATION AREA' }, 'Temple Street'), true);
+  assert.equal(matchesLocation({ matchedAddress: '8 CROSS STREET MANULIFE TOWER SINGAPORE 048424' }, 'Telok Ayer - Cross Street'), true);
 });
 
 test('street validation strips malformed units and tries each building in a shared address', () => {
