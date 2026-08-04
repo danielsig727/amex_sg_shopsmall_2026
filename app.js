@@ -1,13 +1,16 @@
 import {
+  activeResultIndex,
   clearMerchantSelection,
   distanceMeters,
   formatDistance,
   googleMapsSearchUrl,
   merchantMatchesQuery,
+  merchantSearchResults,
   orderMerchants,
+  placeSearchResults,
   requestMerchantSelection,
   revealClusteredMarker,
-} from './merchant-utils.mjs?v=4';
+} from './merchant-utils.mjs?v=5';
 
 const DEFAULT_VIEW = [1.3521, 103.8198];
 const DEFAULT_ZOOM = 11;
@@ -26,7 +29,7 @@ const elements = {
   template: document.querySelector('#merchant-template'),
   searchForm: document.querySelector('#search-form'),
   searchInput: document.querySelector('#search-input'),
-  merchantSearchInput: document.querySelector('#merchant-search-input'),
+  searchResults: document.querySelector('#search-results'),
   sortButtons: [...document.querySelectorAll('[data-sort-mode]')],
   locateButton: document.querySelector('#locate-button'),
 };
@@ -35,6 +38,12 @@ const state = {
   merchants: [],
   activeCategory: 'All',
   directoryQuery: '',
+  placeResults: [],
+  placeSearchError: '',
+  placeSearchPending: false,
+  activeSearchResult: -1,
+  searchRequestId: 0,
+  searchResultsDismissed: false,
   sortMode: 'alphabetical',
   selectedMerchant: null,
   pendingRevealMerchant: null,
@@ -201,39 +210,181 @@ function renderDirectory({ updateMarkers = true } = {}) {
   renderFilters();
   if (updateMarkers) renderMarkers(merchants);
   renderMerchantList(merchants);
+  renderSearchResults();
 }
 
 function escapeHtml(value) {
   return value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
 }
 
-async function searchAddress(query) {
-  const endpoint = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=sg&q=${encodeURIComponent(query)}`;
-  const response = await fetch(endpoint, { headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error('Address search is currently unavailable.');
-  const [result] = await response.json();
-  if (!result) throw new Error('No Singapore address was found. Try a street, mall, or neighbourhood.');
-  map.setView([Number(result.lat), Number(result.lon)], 15);
-  setStatus(`Showing merchants near ${result.display_name.split(',').slice(0, 2).join(',')}.`);
+function flatSearchResults() {
+  const merchants = merchantSearchResults(directoryMerchants(), state.directoryQuery)
+    .map((merchant) => ({ type: 'merchant', merchant }));
+  const places = state.placeResults.map((place) => ({ type: 'place', place }));
+  return [...merchants, ...places];
 }
 
-elements.searchForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const query = elements.searchInput.value.trim();
-  if (!query) return setStatus('Enter an address, mall, or neighbourhood to search.', true);
-  setStatus('Finding that address…');
-  try {
-    await searchAddress(query);
-  } catch (error) {
-    setStatus(error.message, true);
-  }
-});
+function closeSearchResults() {
+  state.activeSearchResult = -1;
+  elements.searchResults.hidden = true;
+  elements.searchInput.setAttribute('aria-expanded', 'false');
+  elements.searchInput.removeAttribute('aria-activedescendant');
+}
 
-elements.merchantSearchInput.addEventListener('input', () => {
-  state.directoryQuery = elements.merchantSearchInput.value;
+function appendSearchResultGroup(fragment, heading, results, renderOption) {
+  if (!results.length) return;
+  const group = document.createElement('section');
+  group.className = 'search-result-group';
+  const title = document.createElement('h2');
+  title.className = 'search-result-heading';
+  title.textContent = heading;
+  group.append(title);
+  results.forEach((result) => group.append(renderOption(result)));
+  fragment.append(group);
+}
+
+function renderSearchResults() {
+  const query = elements.searchInput.value.trim();
+  const results = flatSearchResults();
+  if (state.activeSearchResult >= results.length) state.activeSearchResult = -1;
+  elements.searchResults.replaceChildren();
+  if (!query || state.searchResultsDismissed) return closeSearchResults();
+
+  const fragment = document.createDocumentFragment();
+  const merchantResults = results.filter(({ type }) => type === 'merchant');
+  const placeResults = results.filter(({ type }) => type === 'place');
+  const makeOption = (result) => {
+    const index = results.indexOf(result);
+    const option = document.createElement('button');
+    option.id = `search-result-${index}`;
+    option.className = 'search-result-option';
+    option.type = 'button';
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', String(index === state.activeSearchResult));
+    const primary = document.createElement('span');
+    primary.className = 'search-result-primary';
+    const secondary = document.createElement('span');
+    secondary.className = 'search-result-secondary';
+    if (result.type === 'merchant') {
+      primary.textContent = result.merchant.name;
+      secondary.textContent = `${result.merchant.locationName} · ${result.merchant.address}`;
+    } else {
+      primary.textContent = result.place.label.split(',').slice(0, 2).join(',');
+      secondary.textContent = result.place.label;
+    }
+    option.append(primary, secondary);
+    option.addEventListener('click', () => chooseSearchResult(result));
+    return option;
+  };
+
+  appendSearchResultGroup(fragment, 'Merchants in this view', merchantResults, makeOption);
+  appendSearchResultGroup(fragment, 'Places in Singapore', placeResults, makeOption);
+  const message = state.placeSearchError
+    || (state.placeSearchPending ? 'Searching Singapore places…' : (!results.length ? 'No matching merchants or Singapore places found.' : ''));
+  if (message) {
+    const note = document.createElement('p');
+    note.className = 'search-result-message';
+    note.textContent = message;
+    fragment.append(note);
+  }
+  elements.searchResults.append(fragment);
+  elements.searchResults.hidden = !elements.searchResults.childElementCount;
+  elements.searchInput.setAttribute('aria-expanded', String(!elements.searchResults.hidden));
+  if (state.activeSearchResult >= 0) {
+    elements.searchInput.setAttribute('aria-activedescendant', `search-result-${state.activeSearchResult}`);
+  } else {
+    elements.searchInput.removeAttribute('aria-activedescendant');
+  }
+}
+
+function chooseSearchResult(result) {
+  state.searchResultsDismissed = true;
+  if (result.type === 'merchant') {
+    selectMerchant(result.merchant.id);
+  } else {
+    elements.searchInput.value = '';
+    state.directoryQuery = '';
+    state.placeResults = [];
+    map.setView([result.place.latitude, result.place.longitude], 15);
+    setStatus(`Showing merchants near ${result.place.label.split(',').slice(0, 2).join(',')}.`);
+    renderDirectory();
+  }
+  closeSearchResults();
+}
+
+let placeSearchTimer;
+
+function updatePlaceResults(requestId, places, error = '') {
+  if (requestId !== state.searchRequestId) return;
+  state.placeResults = places;
+  state.placeSearchError = error;
+  state.placeSearchPending = false;
+  state.activeSearchResult = -1;
+  renderSearchResults();
+}
+
+function requestPlaceSuggestions(query) {
+  clearTimeout(placeSearchTimer);
+  const requestId = ++state.searchRequestId;
+  const normalizedQuery = query.trim();
+  if (normalizedQuery.length < 3) return updatePlaceResults(requestId, []);
+
+  state.placeSearchPending = true;
+  state.placeSearchError = '';
+  renderSearchResults();
+  placeSearchTimer = setTimeout(async () => {
+    try {
+      const endpoint = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=4&countrycodes=sg&q=${encodeURIComponent(normalizedQuery)}`;
+      const response = await fetch(endpoint, { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error('Place search is unavailable.');
+      updatePlaceResults(requestId, placeSearchResults(await response.json()));
+    } catch (error) {
+      updatePlaceResults(requestId, [], 'Place search is unavailable. Local merchant matches are still shown.');
+    }
+  }, 250);
+}
+
+elements.searchInput.addEventListener('input', () => {
+  state.searchResultsDismissed = false;
+  state.directoryQuery = elements.searchInput.value;
   state.selectedMerchant = null;
   state.pendingRevealMerchant = null;
   renderDirectory();
+  requestPlaceSuggestions(elements.searchInput.value);
+});
+
+elements.searchInput.addEventListener('focus', () => {
+  state.searchResultsDismissed = false;
+  renderSearchResults();
+});
+
+elements.searchInput.addEventListener('keydown', (event) => {
+  const results = flatSearchResults();
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault();
+    state.activeSearchResult = activeResultIndex(
+      state.activeSearchResult,
+      results.length,
+      event.key === 'ArrowDown' ? 1 : -1,
+    );
+    renderSearchResults();
+  } else if (event.key === 'Escape') {
+    state.searchResultsDismissed = true;
+    closeSearchResults();
+  } else if (event.key === 'Enter' && state.activeSearchResult >= 0) {
+    event.preventDefault();
+    chooseSearchResult(results[state.activeSearchResult]);
+  }
+});
+
+elements.searchForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const results = flatSearchResults();
+  if (state.activeSearchResult >= 0) return chooseSearchResult(results[state.activeSearchResult]);
+  const firstPlace = results.find(({ type }) => type === 'place');
+  if (firstPlace) return chooseSearchResult(firstPlace);
+  if (!elements.searchInput.value.trim()) return setStatus('Enter a merchant, address, mall, or neighbourhood to search.', true);
+  setStatus('Showing matching merchants in this map view. Choose a suggestion or refine your search.');
 });
 
 elements.sortButtons.forEach((button) => {
