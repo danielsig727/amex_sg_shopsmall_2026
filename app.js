@@ -1,6 +1,8 @@
 import {
   clearMerchantSelection,
   googleMapsSearchUrl,
+  merchantMatchesQuery,
+  orderMerchants,
   requestMerchantSelection,
   revealClusteredMarker,
 } from './merchant-utils.mjs?v=3';
@@ -22,12 +24,15 @@ const elements = {
   template: document.querySelector('#merchant-template'),
   searchForm: document.querySelector('#search-form'),
   searchInput: document.querySelector('#search-input'),
+  merchantSearchInput: document.querySelector('#merchant-search-input'),
   locateButton: document.querySelector('#locate-button'),
 };
 
 const state = {
   merchants: [],
   activeCategory: 'All',
+  directoryQuery: '',
+  sortMode: 'alphabetical',
   selectedMerchant: null,
   pendingRevealMerchant: null,
   markerLayer: L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 42, disableClusteringAtZoom: 19 }),
@@ -40,13 +45,15 @@ function setStatus(message, isError = false) {
   elements.status.classList.toggle('is-error', isError);
 }
 
-function visibleMerchants() {
+function directoryMerchants() {
   const bounds = map.getBounds();
-  return state.merchants.filter((merchant) => (
+  const matchingMerchants = state.merchants.filter((merchant) => (
     merchant.coordinateSource === 'onemap'
     && (state.activeCategory === 'All' || merchant.category === state.activeCategory)
     && bounds.contains([merchant.latitude, merchant.longitude])
+    && merchantMatchesQuery(merchant, state.directoryQuery)
   ));
+  return orderMerchants(matchingMerchants, { mode: 'alphabetical' });
 }
 
 function selectMerchant(id, shouldPan = false) {
@@ -107,7 +114,9 @@ function renderMerchantList(merchants) {
   if (!merchants.length) {
     const empty = document.createElement('p');
     empty.className = 'empty-state';
-    empty.textContent = 'No matching merchants are in this map view. Try zooming out or clearing a filter.';
+    empty.textContent = state.directoryQuery.trim()
+      ? `No merchants match “${state.directoryQuery.trim()}” in this map view. Try another search or clear it.`
+      : 'No matching merchants are in this map view. Try zooming out or clearing a filter.';
     elements.list.append(empty);
     return;
   }
@@ -148,10 +157,10 @@ function renderFilters() {
 }
 
 function renderDirectory({ updateMarkers = true } = {}) {
-  const merchants = visibleMerchants();
+  const merchants = directoryMerchants();
   const verifiedCount = state.merchants.filter((merchant) => merchant.coordinateSource === 'onemap').length;
   elements.count.textContent = merchants.length.toLocaleString('en-SG');
-  setStatus(`${state.activeCategory === 'All' ? 'All categories' : state.activeCategory} · ${verifiedCount.toLocaleString('en-SG')} OneMap-verified merchants total`);
+  setStatus(`${merchants.length.toLocaleString('en-SG')} shown · ${state.activeCategory === 'All' ? 'All categories' : state.activeCategory} · ${verifiedCount.toLocaleString('en-SG')} OneMap-verified total`);
   renderFilters();
   if (updateMarkers) renderMarkers(merchants);
   renderMerchantList(merchants);
@@ -181,6 +190,13 @@ elements.searchForm.addEventListener('submit', async (event) => {
   } catch (error) {
     setStatus(error.message, true);
   }
+});
+
+elements.merchantSearchInput.addEventListener('input', () => {
+  state.directoryQuery = elements.merchantSearchInput.value;
+  state.selectedMerchant = null;
+  state.pendingRevealMerchant = null;
+  renderDirectory();
 });
 
 elements.locateButton.addEventListener('click', () => {
