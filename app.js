@@ -1,5 +1,7 @@
 import {
   clearMerchantSelection,
+  distanceMeters,
+  formatDistance,
   googleMapsSearchUrl,
   merchantMatchesQuery,
   orderMerchants,
@@ -25,6 +27,7 @@ const elements = {
   searchForm: document.querySelector('#search-form'),
   searchInput: document.querySelector('#search-input'),
   merchantSearchInput: document.querySelector('#merchant-search-input'),
+  sortButtons: [...document.querySelectorAll('[data-sort-mode]')],
   locateButton: document.querySelector('#locate-button'),
 };
 
@@ -35,6 +38,7 @@ const state = {
   sortMode: 'alphabetical',
   selectedMerchant: null,
   pendingRevealMerchant: null,
+  distanceOriginMarker: null,
   markerLayer: L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 42, disableClusteringAtZoom: 19 }),
   markersByMerchantId: new Map(),
 };
@@ -53,7 +57,34 @@ function directoryMerchants() {
     && bounds.contains([merchant.latitude, merchant.longitude])
     && merchantMatchesQuery(merchant, state.directoryQuery)
   ));
-  return orderMerchants(matchingMerchants, { mode: 'alphabetical' });
+  return orderMerchants(matchingMerchants, {
+    mode: state.sortMode,
+    origin: mapCenterOrigin(),
+  });
+}
+
+function mapCenterOrigin() {
+  const center = map.getCenter();
+  return { latitude: center.lat, longitude: center.lng };
+}
+
+function updateDistanceOriginMarker() {
+  if (state.sortMode !== 'distance') {
+    if (state.distanceOriginMarker) map.removeLayer(state.distanceOriginMarker);
+    state.distanceOriginMarker = null;
+    return;
+  }
+
+  if (!state.distanceOriginMarker) {
+    state.distanceOriginMarker = L.circleMarker(map.getCenter(), {
+      radius: 6,
+      className: 'distance-origin-marker',
+      interactive: false,
+      bubblingMouseEvents: false,
+    }).addTo(map);
+  } else {
+    state.distanceOriginMarker.setLatLng(map.getCenter());
+  }
 }
 
 function selectMerchant(id, shouldPan = false) {
@@ -127,6 +158,11 @@ function renderMerchantList(merchants) {
     card.querySelector('.merchant-name').textContent = merchant.name;
     card.querySelector('.merchant-location').textContent = merchant.locationName;
     card.querySelector('.merchant-address').textContent = merchant.address;
+    const distance = card.querySelector('.merchant-distance');
+    if (state.sortMode === 'distance') {
+      distance.hidden = false;
+      distance.textContent = formatDistance(distanceMeters(mapCenterOrigin(), merchant));
+    }
     card.classList.toggle('is-selected', state.selectedMerchant === merchant.id);
     const selectButton = card.querySelector('.merchant-select');
     const gmapLink = card.querySelector('.gmap-link');
@@ -157,6 +193,7 @@ function renderFilters() {
 }
 
 function renderDirectory({ updateMarkers = true } = {}) {
+  updateDistanceOriginMarker();
   const merchants = directoryMerchants();
   const verifiedCount = state.merchants.filter((merchant) => merchant.coordinateSource === 'onemap').length;
   elements.count.textContent = merchants.length.toLocaleString('en-SG');
@@ -197,6 +234,18 @@ elements.merchantSearchInput.addEventListener('input', () => {
   state.selectedMerchant = null;
   state.pendingRevealMerchant = null;
   renderDirectory();
+});
+
+elements.sortButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    const nextMode = button.dataset.sortMode;
+    if (state.sortMode === nextMode) return;
+    state.sortMode = nextMode;
+    elements.sortButtons.forEach((candidate) => {
+      candidate.setAttribute('aria-pressed', String(candidate.dataset.sortMode === state.sortMode));
+    });
+    renderDirectory();
+  });
 });
 
 elements.locateButton.addEventListener('click', () => {

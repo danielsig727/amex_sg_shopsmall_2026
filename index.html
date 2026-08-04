@@ -43,6 +43,10 @@
             <span>Search merchants in this view</span>
             <input id="merchant-search-input" type="search" placeholder="Name, mall, or address" autocomplete="off" />
           </label>
+          <div class="sort-control" role="group" aria-label="Sort merchants">
+            <button type="button" data-sort-mode="alphabetical" aria-pressed="true">A–Z</button>
+            <button type="button" data-sort-mode="distance" aria-pressed="false">Nearest</button>
+          </div>
         </div>
         <div id="merchant-list" class="merchant-list" aria-live="polite"></div>
       </aside>
@@ -55,6 +59,7 @@
           <strong class="merchant-name"></strong>
           <span class="merchant-location"></span>
           <span class="merchant-address"></span>
+          <span class="merchant-distance" hidden></span>
         </button>
         <a class="gmap-link" target="_blank" rel="noopener noreferrer">gmap ↗</a>
       </article>
