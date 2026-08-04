@@ -58,6 +58,25 @@ test('validated OneMap coordinates override fallback coordinates', () => {
   assert.deepEqual([merchant.latitude, merchant.longitude], [1.301664, 103.858846]);
 });
 
+test('different units resolved to one building coordinate receive distinct map positions', () => {
+  const csv = [
+    'mall_or_street,mall_or_street_name,merchant_category,merchant_name,address',
+    'Street,Eng Hoon Street,RESTAURANT,LITTLE ELEPHANT PTE. LTD.,57 ENG HOON STREET #01-72 SINGAPORE 082001',
+    'Street,Eng Hoon Street,RETAIL,GRAYE - TIONG BAHRU,57 ENG HOON STREET #01-86 SINGAPORE 089137',
+  ].join('\n');
+  const geocodes = {
+    'address:57 eng hoon street #01-72 singapore 082001': { latitude: 1.28480586062688, longitude: 103.833476049892 },
+    'address:57 eng hoon street #01-86 singapore 089137': { latitude: 1.28480586062688, longitude: 103.833476049892 },
+  };
+  const { merchants } = buildMerchantDataset(csv, geocodes);
+
+  assert.notEqual(merchants[0].coordinateKey, merchants[1].coordinateKey);
+  assert.notDeepEqual(
+    [merchants[0].latitude, merchants[0].longitude],
+    [merchants[1].latitude, merchants[1].longitude],
+  );
+});
+
 test('unresolved geocodes remain explicitly unverified', () => {
   const csv = [
     'mall_or_street,mall_or_street_name,merchant_category,merchant_name,address',

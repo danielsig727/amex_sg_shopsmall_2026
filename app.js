@@ -24,7 +24,7 @@ const state = {
   merchants: [],
   activeCategory: 'All',
   selectedMerchant: null,
-  markerLayer: L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 42, disableClusteringAtZoom: 16 }),
+  markerLayer: L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 42, disableClusteringAtZoom: 19 }),
   markersByMerchantId: new Map(),
 };
 map.addLayer(state.markerLayer);

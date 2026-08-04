@@ -88,7 +88,7 @@ function getAnchor(locationName, address) {
 function spreadFromCell(latitude, longitude, position) {
   if (position === 0) return [latitude, longitude];
   const angle = position * 2.399963229728653;
-  const distance = 0.00006 * Math.sqrt(position);
+  const distance = 0.00014 * Math.sqrt(position);
   const offsetLatitude = distance * Math.cos(angle);
   const offsetLongitude = (distance * Math.sin(angle)) / Math.cos(latitude * (Math.PI / 180));
   return [Number((latitude + offsetLatitude).toFixed(6)), Number((longitude + offsetLongitude).toFixed(6))];
@@ -120,20 +120,21 @@ export function buildMerchantDataset(csvText, geocodes = {}) {
     })
     .filter((merchant) => merchant.name && merchant.address);
 
-  const positionByCell = new Map();
+  const positionByCoordinate = new Map();
   const merchants = merchantCells.map((merchant) => {
     const cached = geocodes[merchant.coordinateKey];
     const validated = cached && !cached.unresolved && Number.isFinite(cached.latitude) && Number.isFinite(cached.longitude) ? cached : null;
     const cellLatitude = validated?.latitude ?? merchant.cellLatitude;
     const cellLongitude = validated?.longitude ?? merchant.cellLongitude;
-    const position = positionByCell.get(merchant.coordinateKey) ?? 0;
-    positionByCell.set(merchant.coordinateKey, position + 1);
+    const displayCell = `${cellLatitude},${cellLongitude}`;
+    const position = positionByCoordinate.get(displayCell) ?? 0;
+    positionByCoordinate.set(displayCell, position + 1);
     const [latitude, longitude] = spreadFromCell(cellLatitude, cellLongitude, position);
     return { ...merchant, cellLatitude, cellLongitude, latitude, longitude, coordinateSource: validated ? 'onemap' : 'fallback' };
   });
 
   return {
-    generatedAt: 'static-location-cells-v3',
+    generatedAt: 'static-location-cells-v4',
     merchants,
   };
 }
