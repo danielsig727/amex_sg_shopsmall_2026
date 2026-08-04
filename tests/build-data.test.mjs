@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { buildMerchantDataset } from '../scripts/build-data.mjs';
+import { matchesLocation, validationQuery } from '../scripts/location-queries.mjs';
 
 test('buildMerchantDataset creates a stable Singapore map record', () => {
   const dataset = buildMerchantDataset([
@@ -86,4 +87,16 @@ test('unresolved geocodes remain explicitly unverified', () => {
   const [merchant] = buildMerchantDataset(csv, geocodes).merchants;
 
   assert.equal(merchant.coordinateSource, 'fallback');
+});
+
+test('street validation includes a missing street name and rejects an unrelated match', () => {
+  const merchant = {
+    locationType: 'Street',
+    locationName: 'Tras Street',
+    address: '33 #01-01 SINGAPORE 078973',
+  };
+
+  assert.equal(validationQuery(merchant), '33 Tras Street');
+  assert.equal(matchesLocation({ matchedAddress: '768 WOODLANDS AVE 6 SINGAPORE 730768', matchedName: '33 CONVENIENCE MART' }, merchant.locationName), false);
+  assert.equal(matchesLocation({ matchedAddress: '33 TRAS STREET SINGAPORE 078973', matchedName: 'TANJONG PAGAR CONSERVATION AREA' }, merchant.locationName), true);
 });
