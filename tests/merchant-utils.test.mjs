@@ -3,10 +3,42 @@ import test from 'node:test';
 
 import {
   clearMerchantSelection,
+  compareMerchantsAlphabetically,
+  distanceMeters,
+  formatDistance,
   googleMapsSearchUrl,
+  merchantMatchesQuery,
+  orderMerchants,
   requestMerchantSelection,
   revealClusteredMarker,
 } from '../merchant-utils.mjs';
+
+const discoveryMerchants = [
+  {
+    id: 'zulu-orchard',
+    name: 'Zulu Cafe',
+    locationName: 'Orchard Central',
+    address: '181 ORCHARD ROAD SINGAPORE 238896',
+    latitude: 1.3006,
+    longitude: 103.8399,
+  },
+  {
+    id: 'alpha-tanjong',
+    name: 'alpha bakery',
+    locationName: 'Tanjong Pagar Plaza',
+    address: '1 TANJONG PAGAR PLAZA SINGAPORE 082001',
+    latitude: 1.2765,
+    longitude: 103.8420,
+  },
+  {
+    id: 'alpha-bugis',
+    name: 'Alpha Bakery',
+    locationName: 'Bugis Junction',
+    address: '200 VICTORIA STREET SINGAPORE 188021',
+    latitude: 1.2996,
+    longitude: 103.8554,
+  },
+];
 
 test('googleMapsSearchUrl searches by merchant name and full address', () => {
   const url = googleMapsSearchUrl({
@@ -85,4 +117,52 @@ test('clearMerchantSelection clears a closed popup without scheduling another re
     selectedMerchant: null,
     pendingRevealMerchant: null,
   });
+});
+
+test('merchantMatchesQuery matches name, location, and address case-insensitively', () => {
+  assert.equal(merchantMatchesQuery(discoveryMerchants[0], 'zulu'), true);
+  assert.equal(merchantMatchesQuery(discoveryMerchants[1], 'TANJONG pagar'), true);
+  assert.equal(merchantMatchesQuery(discoveryMerchants[2], 'victoria 188021'), true);
+  assert.equal(merchantMatchesQuery(discoveryMerchants[2], 'orchard'), false);
+  assert.equal(merchantMatchesQuery(discoveryMerchants[2], '   '), true);
+});
+
+test('compareMerchantsAlphabetically uses stable location, address, and id tie breakers', () => {
+  assert.deepEqual(
+    discoveryMerchants.toSorted(compareMerchantsAlphabetically).map(({ id }) => id),
+    ['alpha-bugis', 'alpha-tanjong', 'zulu-orchard'],
+  );
+});
+
+test('distanceMeters calculates straight-line distance without mutating inputs', () => {
+  const origin = { latitude: 0, longitude: 0 };
+  const destination = { latitude: 0, longitude: 1 };
+
+  const result = distanceMeters(origin, destination);
+
+  assert.ok(result > 111_000 && result < 111_300);
+  assert.deepEqual(origin, { latitude: 0, longitude: 0 });
+  assert.deepEqual(destination, { latitude: 0, longitude: 1 });
+});
+
+test('formatDistance uses metres below one kilometre and kilometres otherwise', () => {
+  assert.equal(formatDistance(123.4), '123 m');
+  assert.equal(formatDistance(1_499), '1.5 km');
+});
+
+test('orderMerchants defaults to A–Z without mutating the source array', () => {
+  const source = [...discoveryMerchants];
+
+  const ordered = orderMerchants(source, { mode: 'alphabetical' });
+
+  assert.deepEqual(ordered.map(({ id }) => id), ['alpha-bugis', 'alpha-tanjong', 'zulu-orchard']);
+  assert.deepEqual(source, discoveryMerchants);
+});
+
+test('orderMerchants sorts by distance and breaks equal-distance ties alphabetically', () => {
+  const origin = { latitude: 1.3006, longitude: 103.8399 };
+
+  const ordered = orderMerchants(discoveryMerchants, { mode: 'distance', origin });
+
+  assert.deepEqual(ordered.map(({ id }) => id), ['zulu-orchard', 'alpha-bugis', 'alpha-tanjong']);
 });
