@@ -1,0 +1,56 @@
+{
+  "targets": {
+    "address:116 amoy street #01-02a singapore 049213": {
+      "latitude": 1.28499882847401,
+      "longitude": 103.844697081142,
+      "matchedAddress": "133 NEW BRIDGE ROAD CHINATOWN POINT SINGAPORE 059413",
+      "matchedName": "CHINATOWN POINT",
+      "query": "Chinatown Point Singapore",
+      "displayLocationName": "Chinatown Point",
+      "displayAddress": "133 NEW BRIDGE ROAD CHINATOWN POINT SINGAPORE 059413",
+      "source": "user-confirmed",
+      "provider": "onemap"
+    },
+    "address:52 queen street #01-abfl01 singapore 048616": {
+      "latitude": 1.3003125,
+      "longitude": 103.8543125,
+      "matchedAddress": "8V23+4P SINGAPORE",
+      "matchedName": "JOE'S OUTLET",
+      "query": "8V23+4P Singapore",
+      "displayAddress": "8V23+4P SINGAPORE",
+      "source": "user-confirmed",
+      "provider": "google-plus-code"
+    },
+    "address:54 bussorah street singapore 059225": {
+      "latitude": 1.3016875,
+      "longitude": 103.8594375,
+      "matchedAddress": "8V25+MQ SINGAPORE",
+      "matchedName": "TABBOULEH",
+      "query": "8V25+MQ Singapore",
+      "displayAddress": "54 BUSSORAH STREET, 8V25+MQ SINGAPORE",
+      "source": "user-confirmed",
+      "provider": "google-plus-code"
+    },
+    "address:5 new bugis street fsl-15/16-- singapore 188869": {
+      "latitude": 1.3003125,
+      "longitude": 103.8553125,
+      "matchedAddress": "5 NEW BUGIS STREET, 8V24+44 SINGAPORE",
+      "matchedName": "FRAGRANCE 'N' BEAUTY WORLD",
+      "query": "8V24+44 Singapore",
+      "displayAddress": "5 NEW BUGIS STREET, 8V24+44 SINGAPORE",
+      "source": "user-confirmed",
+      "provider": "google-plus-code"
+    },
+    "address:378 tanjong katong road singapore 437134": {
+      "latitude": 1.3003125,
+      "longitude": 103.8553125,
+      "matchedAddress": "8V24+44 SINGAPORE",
+      "matchedName": "SONG LANG GARDEN",
+      "query": "8V24+44 Singapore",
+      "displayLocationName": "Bugis Street",
+      "displayAddress": "8V24+44 SINGAPORE",
+      "source": "user-confirmed",
+      "provider": "google-plus-code"
+    }
+  }
+}

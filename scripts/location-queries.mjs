@@ -3,6 +3,7 @@ const GENERIC_LOCATION_WORDS = new Set([
   'singapore', 'south', 'street', 'west',
 ]);
 const STREET_NAME = /\b(?:avenue|drive|jalan|lane|lorong|place|road|street)\b/i;
+const STREET_ADDRESS = /^.+?\b(?:avenue|drive|jalan|lane|lorong|parkway|place|road|street)\b/i;
 const PRECISE_VENUE_FALLBACKS = new Set(['punggol settlement']);
 
 function normalize(value) {
@@ -15,7 +16,7 @@ function locationWords(value) {
 
 function unique(values) {
   const seen = new Set();
-  return values.map((value) => value.trim()).filter((value) => {
+  return values.filter((value) => typeof value === 'string').map((value) => value.trim()).filter((value) => {
     const key = normalize(value);
     if (!value || seen.has(key)) return false;
     seen.add(key);
@@ -32,19 +33,27 @@ function numberedStreetQueries(address, locationName) {
   return numbers.map((number) => `${number} ${locationName}`);
 }
 
-export function validationQueries({ locationType, locationName, address }) {
+export function validationQueries({ locationType, locationName, address, name }) {
   const withoutPostal = address.replace(/\s+SINGAPORE\s+\d{6}\s*$/i, '').trim();
   const withoutUnit = withoutPostal.replace(/\s+#.*$/i, '').trim();
   if (locationType !== 'Street') return unique([locationName, withoutUnit]);
 
+  const streetAddress = withoutUnit.match(STREET_ADDRESS)?.[0];
   const normalizedAddress = normalize(withoutUnit);
   const missingLocation = locationWords(locationName).some((word) => !normalizedAddress.includes(word));
   const primary = missingLocation ? `${withoutUnit} ${locationName}` : withoutUnit;
+  const merchantQueries = name ? [`${name} ${locationName}`, name] : [];
   const venueFallback = !STREET_NAME.test(locationName) && PRECISE_VENUE_FALLBACKS.has(normalize(locationName))
     ? [locationName]
     : [];
 
-  return unique([primary, ...numberedStreetQueries(withoutUnit, locationName), ...venueFallback]);
+  return unique([
+    primary,
+    streetAddress,
+    ...numberedStreetQueries(streetAddress ?? withoutUnit, locationName),
+    ...merchantQueries,
+    ...venueFallback,
+  ]);
 }
 
 export function validationQuery(merchant) {

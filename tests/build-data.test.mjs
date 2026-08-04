@@ -59,6 +59,27 @@ test('validated OneMap coordinates override fallback coordinates', () => {
   assert.deepEqual([merchant.latitude, merchant.longitude], [1.301664, 103.858846]);
 });
 
+test('generated merchants retain the verified geocoder source', () => {
+  const csv = [
+    'mall_or_street,mall_or_street_name,merchant_category,merchant_name,address',
+    'Street,Amoy Street,RESTAURANT,Test Merchant,116 AMOY STREET SINGAPORE 069936',
+  ].join('\n');
+  const geocodes = {
+    'address:116 amoy street singapore 069936': {
+      latitude: 1.282309,
+      longitude: 103.8476348,
+      source: 'openstreetmap',
+      displayLocationName: 'Chinatown Point',
+      displayAddress: '133 NEW BRIDGE ROAD CHINATOWN POINT SINGAPORE 059413',
+    },
+  };
+  const [merchant] = buildMerchantDataset(csv, geocodes).merchants;
+
+  assert.equal(merchant.coordinateSource, 'openstreetmap');
+  assert.equal(merchant.locationName, 'Chinatown Point');
+  assert.equal(merchant.address, '133 NEW BRIDGE ROAD CHINATOWN POINT SINGAPORE 059413');
+});
+
 test('different units resolved to one building coordinate receive distinct map positions', () => {
   const csv = [
     'mall_or_street,mall_or_street_name,merchant_category,merchant_name,address',
@@ -137,7 +158,23 @@ test('validation falls back to a mall address or a named street venue', () => {
     address: '3 PUNGGOL POINT ROAD #01-01/02 SINGAPORE 828617',
   }), [
     '3 PUNGGOL POINT ROAD Punggol Settlement',
+    '3 PUNGGOL POINT ROAD',
     '3 Punggol Settlement',
     'Punggol Settlement',
+  ]);
+});
+
+test('validation extracts the correct street address before trailing shop notation', () => {
+  assert.deepEqual(validationQueries({
+    locationType: 'Street',
+    locationName: 'Bugis Street',
+    name: "FRAGRANCE 'N' BEAUTY WORLD",
+    address: '5 NEW BUGIS STREET FSL-15/16-- SINGAPORE 188869',
+  }), [
+    '5 NEW BUGIS STREET FSL-15/16--',
+    '5 NEW BUGIS STREET',
+    '5 Bugis Street',
+    "FRAGRANCE 'N' BEAUTY WORLD Bugis Street",
+    "FRAGRANCE 'N' BEAUTY WORLD",
   ]);
 });

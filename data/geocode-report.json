@@ -1,53 +1,5 @@
 {
   "total": 1104,
-  "resolved": 1099,
-  "unresolved": [
-    {
-      "key": "address:116 amoy street #01-02a singapore 049213",
-      "query": "116 AMOY STREET",
-      "attemptedQueries": [
-        "116 AMOY STREET"
-      ],
-      "validationVersion": 4,
-      "unresolved": true
-    },
-    {
-      "key": "address:52 queen street #01-abfl01 singapore 048616",
-      "query": "52 QUEEN STREET Bugis Village",
-      "attemptedQueries": [
-        "52 QUEEN STREET Bugis Village",
-        "52 Bugis Village"
-      ],
-      "validationVersion": 4,
-      "unresolved": true
-    },
-    {
-      "key": "address:54 bussorah street singapore 059225",
-      "query": "54 BUSSORAH STREET",
-      "attemptedQueries": [
-        "54 BUSSORAH STREET"
-      ],
-      "validationVersion": 4,
-      "unresolved": true
-    },
-    {
-      "key": "address:5 new bugis street fsl-15/16-- singapore 188869",
-      "query": "5 NEW BUGIS STREET FSL-15/16--",
-      "attemptedQueries": [
-        "5 NEW BUGIS STREET FSL-15/16--",
-        "5 Bugis Street"
-      ],
-      "validationVersion": 4,
-      "unresolved": true
-    },
-    {
-      "key": "address:378 tanjong katong road singapore 437134",
-      "query": "378 TANJONG KATONG ROAD",
-      "attemptedQueries": [
-        "378 TANJONG KATONG ROAD"
-      ],
-      "validationVersion": 4,
-      "unresolved": true
-    }
-  ]
+  "resolved": 1104,
+  "unresolved": []
 }

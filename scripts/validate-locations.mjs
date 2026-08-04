@@ -8,8 +8,9 @@ import { matchesLocation, validationQueries } from './location-queries.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GEOCODES_PATH = resolve(ROOT, 'data/geocodes.json');
 const REPORT_PATH = resolve(ROOT, 'data/geocode-report.json');
+const OVERRIDES_PATH = resolve(ROOT, 'data/location-overrides.json');
 const SEARCH_URL = 'https://www.onemap.gov.sg/api/common/elastic/search';
-const VALIDATION_VERSION = 4;
+const VALIDATION_VERSION = 6;
 const token = process.env.AMEX_ONEMAP_TOKEN;
 const maxTargets = Number(process.argv.find((argument) => argument.startsWith('--limit='))?.slice(8) ?? Infinity);
 
@@ -63,8 +64,13 @@ for (const merchant of current.merchants) {
 }
 
 const cache = await readJson(GEOCODES_PATH, { targets: {} });
+const overrides = await readJson(OVERRIDES_PATH, { targets: {} });
 let processed = 0;
 for (const [key, merchant] of targets) {
+  if (overrides.targets[key]) {
+    cache.targets[key] = { ...overrides.targets[key], validationVersion: VALIDATION_VERSION, override: true };
+    continue;
+  }
   const cached = cache.targets[key];
   const cacheMatchesMerchantLocation = merchant.locationType !== 'Street' || matchesLocation(cached ?? {}, merchant.locationName);
   const currentQueries = validationQueries(merchant);
@@ -78,6 +84,9 @@ for (const [key, merchant] of targets) {
   await writeFile(GEOCODES_PATH, `${JSON.stringify(cache)}\n`);
   await pause(220);
 }
+
+await mkdir(dirname(GEOCODES_PATH), { recursive: true });
+await writeFile(GEOCODES_PATH, `${JSON.stringify(cache)}\n`);
 
 const records = Object.entries(cache.targets).map(([key, value]) => ({ key, ...value }));
 const report = {

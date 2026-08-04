@@ -130,7 +130,16 @@ export function buildMerchantDataset(csvText, geocodes = {}) {
     const position = positionByCoordinate.get(displayCell) ?? 0;
     positionByCoordinate.set(displayCell, position + 1);
     const [latitude, longitude] = spreadFromCell(cellLatitude, cellLongitude, position);
-    return { ...merchant, cellLatitude, cellLongitude, latitude, longitude, coordinateSource: validated ? 'onemap' : 'fallback' };
+    return {
+      ...merchant,
+      locationName: validated?.displayLocationName ?? merchant.locationName,
+      address: validated?.displayAddress ?? merchant.address,
+      cellLatitude,
+      cellLongitude,
+      latitude,
+      longitude,
+      coordinateSource: validated?.source ?? (validated ? 'onemap' : 'fallback'),
+    };
   });
 
   return {

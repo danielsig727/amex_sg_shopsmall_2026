@@ -62,7 +62,7 @@ function setStatus(message, isError = false) {
 function directoryMerchants() {
   const bounds = map.getBounds();
   const matchingMerchants = state.merchants.filter((merchant) => (
-    merchant.coordinateSource === 'onemap'
+    merchant.coordinateSource !== 'fallback'
     && (state.activeCategory === 'All' || merchant.category === state.activeCategory)
     && bounds.contains([merchant.latitude, merchant.longitude])
     && merchantMatchesQuery(merchant, state.directoryQuery)
@@ -198,9 +198,9 @@ function renderFilters() {
 function renderDirectory({ updateMarkers = true } = {}) {
   updateDistanceOriginReticle();
   const merchants = directoryMerchants();
-  const verifiedCount = state.merchants.filter((merchant) => merchant.coordinateSource === 'onemap').length;
+  const verifiedCount = state.merchants.filter((merchant) => merchant.coordinateSource !== 'fallback').length;
   elements.count.textContent = merchants.length.toLocaleString('en-SG');
-  setStatus(`${merchants.length.toLocaleString('en-SG')} shown · ${state.activeCategory === 'All' ? 'All categories' : state.activeCategory} · ${verifiedCount.toLocaleString('en-SG')} OneMap-verified total`);
+  setStatus(`${merchants.length.toLocaleString('en-SG')} shown · ${state.activeCategory === 'All' ? 'All categories' : state.activeCategory} · ${verifiedCount.toLocaleString('en-SG')} resolved total`);
   renderFilters();
   if (updateMarkers) renderMarkers(merchants);
   renderMerchantList(merchants);
