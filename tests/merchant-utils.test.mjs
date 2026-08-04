@@ -2,13 +2,16 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  activeResultIndex,
   clearMerchantSelection,
   compareMerchantsAlphabetically,
   distanceMeters,
   formatDistance,
   googleMapsSearchUrl,
   merchantMatchesQuery,
+  merchantSearchResults,
   orderMerchants,
+  placeSearchResults,
   requestMerchantSelection,
   revealClusteredMarker,
 } from '../merchant-utils.mjs';
@@ -125,6 +128,32 @@ test('merchantMatchesQuery matches name, location, and address case-insensitivel
   assert.equal(merchantMatchesQuery(discoveryMerchants[2], 'victoria 188021'), true);
   assert.equal(merchantMatchesQuery(discoveryMerchants[2], 'orchard'), false);
   assert.equal(merchantMatchesQuery(discoveryMerchants[2], '   '), true);
+});
+
+test('merchantSearchResults preserves supplied directory order and caps matches', () => {
+  const results = merchantSearchResults(discoveryMerchants, 'a', 2);
+
+  assert.deepEqual(results.map(({ id }) => id), ['zulu-orchard', 'alpha-tanjong']);
+});
+
+test('placeSearchResults removes malformed coordinates and caps suggestions', () => {
+  const results = placeSearchResults([
+    { display_name: 'Arab Street, Singapore', lat: '1.302', lon: '103.859' },
+    { display_name: 'Malformed Place', lat: 'x', lon: '103.8' },
+    { display_name: '', lat: '1.3', lon: '103.8' },
+  ]);
+
+  assert.deepEqual(results, [{
+    label: 'Arab Street, Singapore',
+    latitude: 1.302,
+    longitude: 103.859,
+  }]);
+});
+
+test('activeResultIndex wraps keyboard navigation and handles no results', () => {
+  assert.equal(activeResultIndex(-1, 3, 1), 0);
+  assert.equal(activeResultIndex(0, 3, -1), 2);
+  assert.equal(activeResultIndex(0, 0, 1), -1);
 });
 
 test('compareMerchantsAlphabetically uses stable location, address, and id tie breakers', () => {

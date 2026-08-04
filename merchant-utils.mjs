@@ -48,6 +48,26 @@ export function merchantMatchesQuery(merchant, query) {
   return terms.every((term) => searchableText.includes(term));
 }
 
+export function merchantSearchResults(merchants, query, limit = 6) {
+  return merchants.filter((merchant) => merchantMatchesQuery(merchant, query)).slice(0, limit);
+}
+
+export function placeSearchResults(places, limit = 4) {
+  return places
+    .map((place) => ({
+      label: place.display_name,
+      latitude: Number(place.lat),
+      longitude: Number(place.lon),
+    }))
+    .filter((place) => place.label && Number.isFinite(place.latitude) && Number.isFinite(place.longitude))
+    .slice(0, limit);
+}
+
+export function activeResultIndex(currentIndex, resultCount, direction) {
+  if (!resultCount) return -1;
+  return (currentIndex + direction + resultCount) % resultCount;
+}
+
 export function compareMerchantsAlphabetically(left, right) {
   return merchantCollator.compare(left.name, right.name)
     || merchantCollator.compare(left.locationName, right.locationName)
