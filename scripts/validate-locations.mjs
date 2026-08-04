@@ -3,12 +3,13 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildMerchantDataset } from './build-data.mjs';
-import { matchesLocation, validationQuery } from './location-queries.mjs';
+import { matchesLocation, validationQueries } from './location-queries.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GEOCODES_PATH = resolve(ROOT, 'data/geocodes.json');
 const REPORT_PATH = resolve(ROOT, 'data/geocode-report.json');
 const SEARCH_URL = 'https://www.onemap.gov.sg/api/common/elastic/search';
+const VALIDATION_VERSION = 4;
 const token = process.env.AMEX_ONEMAP_TOKEN;
 const maxTargets = Number(process.argv.find((argument) => argument.startsWith('--limit='))?.slice(8) ?? Infinity);
 
@@ -40,22 +41,16 @@ async function searchOnce(query) {
   } : null;
 }
 
-function queryCandidates(query) {
-  const withoutPostal = query.replace(/\s+SINGAPORE\s+\d{6}\s*$/i, '').trim();
-  const withoutUnit = withoutPostal.replace(/\s+#[-A-Z0-9/]+\s*$/i, '').trim();
-  return [...new Set([withoutUnit, withoutPostal, query].filter(Boolean))];
-}
-
-async function geocode(query, merchant) {
+async function geocode(queries, merchant) {
   const attemptedQueries = [];
-  for (const candidate of queryCandidates(query)) {
+  for (const candidate of queries) {
     attemptedQueries.push(candidate);
     const match = await searchOnce(candidate);
     if (match && (merchant.locationType !== 'Street' || matchesLocation(match, merchant.locationName))) {
-      return { ...match, attemptedQueries };
+      return { ...match, attemptedQueries, validationVersion: VALIDATION_VERSION };
     }
   }
-  return { query, attemptedQueries, unresolved: true };
+  return { query: queries[0], attemptedQueries, validationVersion: VALIDATION_VERSION, unresolved: true };
 }
 
 const source = await readFile(resolve(ROOT, 'amex_sg_shop_small_merchant_directory.csv'), 'utf8');
@@ -72,9 +67,11 @@ let processed = 0;
 for (const [key, merchant] of targets) {
   const cached = cache.targets[key];
   const cacheMatchesMerchantLocation = merchant.locationType !== 'Street' || matchesLocation(cached ?? {}, merchant.locationName);
-  if (cached && cacheMatchesMerchantLocation && (!cached.unresolved || cached.attemptedQueries)) continue;
+  const currentQueries = validationQueries(merchant);
+  const usedRemovedVenueFallback = cached?.validationVersion === 3 && !currentQueries.includes(cached.query);
+  if (cached && cacheMatchesMerchantLocation && !usedRemovedVenueFallback && (!cached.unresolved || cached.validationVersion === VALIDATION_VERSION)) continue;
   if (processed >= maxTargets) break;
-  cache.targets[key] = await geocode(validationQuery(merchant), merchant);
+  cache.targets[key] = await geocode(currentQueries, merchant);
   processed += 1;
   process.stdout.write(`Validated ${Object.keys(cache.targets).length}/${targets.size}\r`);
   await mkdir(dirname(GEOCODES_PATH), { recursive: true });

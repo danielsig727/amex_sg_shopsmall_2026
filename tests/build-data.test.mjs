@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { buildMerchantDataset } from '../scripts/build-data.mjs';
-import { matchesLocation, validationQuery } from '../scripts/location-queries.mjs';
+import { matchesLocation, validationQueries, validationQuery } from '../scripts/location-queries.mjs';
 
 test('buildMerchantDataset creates a stable Singapore map record', () => {
   const dataset = buildMerchantDataset([
@@ -99,4 +99,45 @@ test('street validation includes a missing street name and rejects an unrelated 
   assert.equal(validationQuery(merchant), '33 Tras Street');
   assert.equal(matchesLocation({ matchedAddress: '768 WOODLANDS AVE 6 SINGAPORE 730768', matchedName: '33 CONVENIENCE MART' }, merchant.locationName), false);
   assert.equal(matchesLocation({ matchedAddress: '33 TRAS STREET SINGAPORE 078973', matchedName: 'TANJONG PAGAR CONSERVATION AREA' }, merchant.locationName), true);
+});
+
+test('street validation strips malformed units and tries each building in a shared address', () => {
+  assert.deepEqual(validationQueries({
+    locationType: 'Street',
+    locationName: 'Bukit Pasoh Road',
+    address: '18/20 BUKIT PASOH ROAD #01-00 SINGAPORE 018981',
+  }), [
+    '18/20 BUKIT PASOH ROAD',
+    '18 Bukit Pasoh Road',
+    '20 Bukit Pasoh Road',
+  ]);
+
+  assert.deepEqual(validationQueries({
+    locationType: 'Street',
+    locationName: 'Teck Lim Road',
+    address: '5 TECK LIM ROAD #01 & #02-01 & 01 SINGAPORE 079903',
+  }), [
+    '5 TECK LIM ROAD',
+  ]);
+});
+
+test('validation falls back to a mall address or a named street venue', () => {
+  assert.deepEqual(validationQueries({
+    locationType: 'In-Mall',
+    locationName: 'I12 Katong',
+    address: '112 EAST COAST ROAD #01-04 SINGAPORE 428802',
+  }), [
+    'I12 Katong',
+    '112 EAST COAST ROAD',
+  ]);
+
+  assert.deepEqual(validationQueries({
+    locationType: 'Street',
+    locationName: 'Punggol Settlement',
+    address: '3 PUNGGOL POINT ROAD #01-01/02 SINGAPORE 828617',
+  }), [
+    '3 PUNGGOL POINT ROAD Punggol Settlement',
+    '3 Punggol Settlement',
+    'Punggol Settlement',
+  ]);
 });
