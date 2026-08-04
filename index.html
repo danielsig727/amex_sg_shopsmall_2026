@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    <link rel="stylesheet" href="styles.css?v=5" />
+    <link rel="stylesheet" href="styles.css?v=6" />
   </head>
   <body>
     <header class="site-header">
@@ -18,9 +18,10 @@
         <span>Small Merchant Map <em>Singapore</em></span>
       </a>
       <form id="search-form" class="search-form" role="search">
-        <label class="visually-hidden" for="search-input">Find an address in Singapore</label>
-        <input id="search-input" type="search" placeholder="Search an address or neighbourhood" autocomplete="street-address" />
-        <button type="submit">Find on map</button>
+        <label class="visually-hidden" for="search-input">Search merchants or a Singapore address</label>
+        <input id="search-input" type="search" placeholder="Search merchants, addresses, or neighbourhoods" autocomplete="off" role="combobox" aria-controls="search-results" aria-expanded="false" aria-autocomplete="list" />
+        <button type="submit">Find</button>
+        <div id="search-results" class="search-results" role="listbox" hidden></div>
       </form>
       <button id="locate-button" class="location-button" type="button">◎ Use my location</button>
     </header>
@@ -39,10 +40,6 @@
         </div>
         <div id="category-filters" class="category-filters" aria-label="Filter by category"></div>
         <div class="directory-controls">
-          <label class="directory-search" for="merchant-search-input">
-            <span>Search merchants in this view</span>
-            <input id="merchant-search-input" type="search" placeholder="Name, mall, or address" autocomplete="off" />
-          </label>
           <div class="sort-control" role="group" aria-label="Sort merchants">
             <button type="button" data-sort-mode="alphabetical" aria-pressed="true">A–Z</button>
             <button type="button" data-sort-mode="distance" aria-pressed="false">Nearest</button>
@@ -67,6 +64,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script type="module" src="app.js?v=9"></script>
+    <script type="module" src="app.js?v=10"></script>
   </body>
 </html>
