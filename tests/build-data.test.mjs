@@ -69,15 +69,11 @@ test('generated merchants retain the verified geocoder source', () => {
       latitude: 1.282309,
       longitude: 103.8476348,
       source: 'openstreetmap',
-      displayLocationName: 'Chinatown Point',
-      displayAddress: '133 NEW BRIDGE ROAD CHINATOWN POINT SINGAPORE 059413',
     },
   };
   const [merchant] = buildMerchantDataset(csv, geocodes).merchants;
 
   assert.equal(merchant.coordinateSource, 'openstreetmap');
-  assert.equal(merchant.locationName, 'Chinatown Point');
-  assert.equal(merchant.address, '133 NEW BRIDGE ROAD CHINATOWN POINT SINGAPORE 059413');
 });
 
 test('different units resolved to one building coordinate receive distinct map positions', () => {

@@ -132,8 +132,6 @@ export function buildMerchantDataset(csvText, geocodes = {}) {
     const [latitude, longitude] = spreadFromCell(cellLatitude, cellLongitude, position);
     return {
       ...merchant,
-      locationName: validated?.displayLocationName ?? merchant.locationName,
-      address: validated?.displayAddress ?? merchant.address,
       cellLatitude,
       cellLongitude,
       latitude,
