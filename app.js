@@ -7,7 +7,7 @@ import {
   orderMerchants,
   requestMerchantSelection,
   revealClusteredMarker,
-} from './merchant-utils.mjs?v=3';
+} from './merchant-utils.mjs?v=4';
 
 const DEFAULT_VIEW = [1.3521, 103.8198];
 const DEFAULT_ZOOM = 11;
