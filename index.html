@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    <link rel="stylesheet" href="styles.css?v=7" />
+    <link rel="stylesheet" href="styles.css?v=8" />
   </head>
   <body>
     <header class="site-header">
@@ -29,6 +29,7 @@
     <main class="app-shell">
       <section class="map-panel" aria-label="Map of Singapore merchants">
         <div id="map" aria-label="Interactive map of Amex small merchants in Singapore"></div>
+        <div id="distance-origin-reticle" class="distance-origin-reticle" aria-hidden="true" hidden></div>
         <div class="map-caption">Pins represent merchant locations. Zoom in to explore the area.</div>
       </section>
 
@@ -64,6 +65,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script type="module" src="app.js?v=11"></script>
+    <script type="module" src="app.js?v=12"></script>
   </body>
 </html>

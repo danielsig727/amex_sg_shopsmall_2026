@@ -30,6 +30,7 @@ const elements = {
   searchForm: document.querySelector('#search-form'),
   searchInput: document.querySelector('#search-input'),
   searchResults: document.querySelector('#search-results'),
+  distanceOriginReticle: document.querySelector('#distance-origin-reticle'),
   sortButtons: [...document.querySelectorAll('[data-sort-mode]')],
   locateButton: document.querySelector('#locate-button'),
 };
@@ -47,7 +48,6 @@ const state = {
   sortMode: 'alphabetical',
   selectedMerchant: null,
   pendingRevealMerchant: null,
-  distanceOriginMarker: null,
   markerLayer: L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 42, disableClusteringAtZoom: 19 }),
   markersByMerchantId: new Map(),
 };
@@ -77,23 +77,8 @@ function mapCenterOrigin() {
   return { latitude: center.lat, longitude: center.lng };
 }
 
-function updateDistanceOriginMarker() {
-  if (state.sortMode !== 'distance') {
-    if (state.distanceOriginMarker) map.removeLayer(state.distanceOriginMarker);
-    state.distanceOriginMarker = null;
-    return;
-  }
-
-  if (!state.distanceOriginMarker) {
-    state.distanceOriginMarker = L.circleMarker(map.getCenter(), {
-      radius: 6,
-      className: 'distance-origin-marker',
-      interactive: false,
-      bubblingMouseEvents: false,
-    }).addTo(map);
-  } else {
-    state.distanceOriginMarker.setLatLng(map.getCenter());
-  }
+function updateDistanceOriginReticle() {
+  elements.distanceOriginReticle.hidden = state.sortMode !== 'distance';
 }
 
 function selectMerchant(id, shouldPan = false) {
@@ -202,7 +187,7 @@ function renderFilters() {
 }
 
 function renderDirectory({ updateMarkers = true } = {}) {
-  updateDistanceOriginMarker();
+  updateDistanceOriginReticle();
   const merchants = directoryMerchants();
   const verifiedCount = state.merchants.filter((merchant) => merchant.coordinateSource === 'onemap').length;
   elements.count.textContent = merchants.length.toLocaleString('en-SG');
