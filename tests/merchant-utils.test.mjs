@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { googleMapsSearchUrl, revealClusteredMarker } from '../merchant-utils.mjs';
+import {
+  clearMerchantSelection,
+  googleMapsSearchUrl,
+  requestMerchantSelection,
+  revealClusteredMarker,
+} from '../merchant-utils.mjs';
 
 test('googleMapsSearchUrl searches by merchant name and full address', () => {
   const url = googleMapsSearchUrl({
@@ -35,4 +40,49 @@ test('revealClusteredMarker makes a clustered marker visible before opening its 
 
   assert.equal(marker.visible, true);
   assert.equal(marker.popupOpen, true);
+});
+
+test('requestMerchantSelection ignores repeated clicks while that popup is open', () => {
+  const selection = {
+    selectedMerchant: 'graye',
+    pendingRevealMerchant: null,
+  };
+
+  const changed = requestMerchantSelection(selection, 'graye', true);
+
+  assert.equal(changed, false);
+  assert.deepEqual(selection, {
+    selectedMerchant: 'graye',
+    pendingRevealMerchant: null,
+  });
+});
+
+test('requestMerchantSelection records a new explicit reveal', () => {
+  const selection = {
+    selectedMerchant: 'graye',
+    pendingRevealMerchant: null,
+  };
+
+  const changed = requestMerchantSelection(selection, 'little-elephant', false);
+
+  assert.equal(changed, true);
+  assert.deepEqual(selection, {
+    selectedMerchant: 'little-elephant',
+    pendingRevealMerchant: 'little-elephant',
+  });
+});
+
+test('clearMerchantSelection clears a closed popup without scheduling another reveal', () => {
+  const selection = {
+    selectedMerchant: 'graye',
+    pendingRevealMerchant: null,
+  };
+
+  const changed = clearMerchantSelection(selection, 'graye');
+
+  assert.equal(changed, true);
+  assert.deepEqual(selection, {
+    selectedMerchant: null,
+    pendingRevealMerchant: null,
+  });
 });

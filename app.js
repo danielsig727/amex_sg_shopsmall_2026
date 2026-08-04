@@ -1,4 +1,9 @@
-import { googleMapsSearchUrl, revealClusteredMarker } from './merchant-utils.mjs?v=2';
+import {
+  clearMerchantSelection,
+  googleMapsSearchUrl,
+  requestMerchantSelection,
+  revealClusteredMarker,
+} from './merchant-utils.mjs?v=3';
 
 const DEFAULT_VIEW = [1.3521, 103.8198];
 const DEFAULT_ZOOM = 11;
@@ -24,7 +29,7 @@ const state = {
   merchants: [],
   activeCategory: 'All',
   selectedMerchant: null,
-  isRevealingSelection: false,
+  pendingRevealMerchant: null,
   markerLayer: L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 42, disableClusteringAtZoom: 19 }),
   markersByMerchantId: new Map(),
 };
@@ -45,8 +50,9 @@ function visibleMerchants() {
 }
 
 function selectMerchant(id, shouldPan = false) {
-  state.selectedMerchant = id;
-  state.isRevealingSelection = true;
+  const currentMarker = state.markersByMerchantId.get(id);
+  if (!requestMerchantSelection(state, id, currentMarker?.isPopupOpen() ?? false)) return;
+
   if (shouldPan) {
     const merchant = state.merchants.find((item) => item.id === id);
     if (merchant) map.setView([merchant.latitude, merchant.longitude], Math.max(map.getZoom(), 16));
@@ -70,20 +76,29 @@ function renderMarkers(merchants) {
       </div>
     `);
     marker.on('click', () => selectMerchant(merchant.id));
+    marker.on('popupclose', () => {
+      if (clearMerchantSelection(state, merchant.id)) renderDirectory();
+    });
     state.markersByMerchantId.set(merchant.id, marker);
     state.markerLayer.addLayer(marker);
   });
-  const selectedMarker = state.markersByMerchantId.get(state.selectedMerchant);
+  const merchantToReveal = state.pendingRevealMerchant;
+  const selectedMarker = merchantToReveal === state.selectedMerchant
+    ? state.markersByMerchantId.get(merchantToReveal)
+    : null;
   if (selectedMarker) {
     revealClusteredMarker(state.markerLayer, selectedMarker, () => {
-      if (state.markersByMerchantId.get(state.selectedMerchant) === selectedMarker) {
+      if (
+        state.pendingRevealMerchant === merchantToReveal
+        && state.markersByMerchantId.get(merchantToReveal) === selectedMarker
+      ) {
+        state.pendingRevealMerchant = null;
         selectedMarker.openPopup();
-        state.isRevealingSelection = false;
         renderDirectory({ updateMarkers: false });
       }
     });
-  } else {
-    state.isRevealingSelection = false;
+  } else if (merchantToReveal) {
+    state.pendingRevealMerchant = null;
   }
 }
 
@@ -183,7 +198,10 @@ elements.locateButton.addEventListener('click', () => {
 });
 
 map.on('moveend', () => {
-  if (state.merchants.length && !state.isRevealingSelection) renderDirectory();
+  if (!state.merchants.length || state.pendingRevealMerchant) return;
+
+  const selectedMarker = state.markersByMerchantId.get(state.selectedMerchant);
+  renderDirectory({ updateMarkers: !selectedMarker?.isPopupOpen() });
 });
 
 async function initializeDirectory() {
