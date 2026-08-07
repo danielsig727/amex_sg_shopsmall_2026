@@ -39,9 +39,9 @@
         <div class="map-caption">Pins represent merchant locations. Zoom in to explore the area.</div>
       </section>
 
-      <aside class="directory-panel" aria-label="Merchants in current map view">
+      <aside id="directory-panel" class="directory-panel" aria-label="Merchants in current map view">
         <div class="directory-intro">
-          <p class="eyebrow">In this map view</p>
+          <p id="directory-scope-label" class="eyebrow">In this map view</p>
           <h1><span id="merchant-count">Loading</span> merchants</h1>
           <p id="status" class="status" aria-live="polite">Loading the directory…</p>
         </div>
@@ -59,12 +59,13 @@
     <template id="merchant-template">
       <article class="merchant-card">
         <button class="merchant-select" type="button">
-          <span class="merchant-category"></span>
-          <strong class="merchant-name"></strong>
-          <span class="merchant-location"></span>
-          <span class="merchant-address"></span>
-          <span class="merchant-distance" hidden></span>
+          <span class="visually-hidden merchant-select-label"></span>
         </button>
+        <span class="merchant-category"></span>
+        <strong class="merchant-name"></strong>
+        <button class="merchant-location" type="button"></button>
+        <span class="merchant-address"></span>
+        <span class="merchant-distance" hidden></span>
         <a class="gmap-link" target="_blank" rel="noopener noreferrer">gmap ↗</a>
       </article>
     </template>

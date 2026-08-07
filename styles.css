@@ -76,15 +76,19 @@ h1 { margin: 0; font-size: 1.46rem; letter-spacing: -.04em; }
 .sort-control button[aria-pressed="true"] { background: white; color: var(--deep-blue); box-shadow: 0 1px 4px rgb(21 40 67 / 14%); }
 .sort-control button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .merchant-list { overflow: auto; padding: 8px 13px 22px; }
-.merchant-card { position: relative; border-bottom: 1px solid var(--line); background: white; }
-.merchant-select { width: 100%; display: grid; gap: 3px; padding: 15px 68px 15px 11px; text-align: left; border: 0; background: transparent; color: var(--ink); }
+.merchant-card { position: relative; display: grid; gap: 3px; padding: 15px 68px 15px 11px; border-bottom: 1px solid var(--line); background: white; }
+.merchant-select { position: absolute; inset: 0; z-index: 0; border: 0; background: transparent; }
+.merchant-card > :not(.merchant-select) { position: relative; z-index: 1; pointer-events: none; }
+.merchant-card > .merchant-location, .merchant-card > .gmap-link { z-index: 2; pointer-events: auto; }
 .merchant-card:hover, .merchant-card.is-selected { background: #f1f8fc; box-shadow: inset 3px 0 var(--blue); }
 .merchant-select:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
 .merchant-card > .gmap-link { position: absolute; top: 15px; right: 11px; }
+.merchant-location { justify-self: start; padding: 0; border: 0; background: transparent; color: #445a70; font-size: .79rem; font-weight: 700; text-align: left; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 2px; }
+.merchant-location:hover { color: var(--deep-blue); text-decoration-color: currentColor; }
+.merchant-location:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .gmap-link { color: var(--deep-blue); font-size: .72rem; font-weight: 750; text-decoration: underline; text-underline-offset: 2px; }
 .merchant-category { color: var(--blue); font-size: .65rem; font-weight: 800; letter-spacing: .09em; }
 .merchant-name { font-size: .92rem; line-height: 1.25; }
-.merchant-location { color: #445a70; font-size: .79rem; font-weight: 700; }
 .merchant-address { color: var(--muted); font-size: .74rem; line-height: 1.3; }
 .merchant-distance { color: var(--deep-blue); font-size: .72rem; font-weight: 750; }
 .empty-state { padding: 34px 13px; color: var(--muted); text-align: center; }

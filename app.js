@@ -27,6 +27,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const elements = {
   count: document.querySelector('#merchant-count'),
   status: document.querySelector('#status'),
+  directoryPanel: document.querySelector('#directory-panel'),
+  directoryScopeLabel: document.querySelector('#directory-scope-label'),
   filters: document.querySelector('#category-filters'),
   list: document.querySelector('#merchant-list'),
   template: document.querySelector('#merchant-template'),
@@ -166,9 +168,13 @@ function renderMerchantList(merchants) {
   if (!merchants.length) {
     const empty = document.createElement('p');
     empty.className = 'empty-state';
-    empty.textContent = state.directoryQuery.trim()
-      ? `No merchants match “${state.directoryQuery.trim()}” in this map view. Try another search or clear it.`
-      : 'No matching merchants are in this map view. Try zooming out or clearing a filter.';
+    if (state.activePlace) {
+      empty.textContent = `No merchants match the current search or category at ${state.activePlace.locationName}. Clear the text, category, or place filter.`;
+    } else if (state.directoryQuery.trim()) {
+      empty.textContent = `No merchants match “${state.directoryQuery.trim()}” in this map view. Try another search or clear it.`;
+    } else {
+      empty.textContent = 'No matching merchants are in this map view. Try zooming out or clearing a filter.';
+    }
     elements.list.append(empty);
     return;
   }
@@ -177,7 +183,6 @@ function renderMerchantList(merchants) {
     const card = elements.template.content.firstElementChild.cloneNode(true);
     card.querySelector('.merchant-category').textContent = merchant.category;
     card.querySelector('.merchant-name').textContent = merchant.name;
-    card.querySelector('.merchant-location').textContent = merchant.locationName;
     card.querySelector('.merchant-address').textContent = merchant.address;
     const distance = card.querySelector('.merchant-distance');
     if (state.sortMode === 'distance') {
@@ -186,8 +191,19 @@ function renderMerchantList(merchants) {
     }
     card.classList.toggle('is-selected', state.selectedMerchant === merchant.id);
     const selectButton = card.querySelector('.merchant-select');
+    const selectLabel = card.querySelector('.merchant-select-label');
+    const locationButton = card.querySelector('.merchant-location');
+    const place = state.merchantPlaces.find(({ locationCell }) => (
+      locationCell === merchant.locationCell
+    ));
     const gmapLink = card.querySelector('.gmap-link');
+    selectLabel.textContent = `Show ${merchant.name} on the map`;
+    locationButton.textContent = merchant.locationName;
+    locationButton.setAttribute('aria-label', `Show all merchants at ${merchant.locationName}`);
     selectButton.addEventListener('click', () => selectMerchant(merchant.id, true));
+    locationButton.addEventListener('click', () => {
+      if (place) activateMerchantPlace(place);
+    });
     gmapLink.href = googleMapsSearchUrl(merchant);
     gmapLink.setAttribute('aria-label', `Open ${merchant.name} in Google Maps`);
     fragment.append(card);
@@ -218,8 +234,21 @@ function renderDirectory({ updateMarkers = true } = {}) {
   renderActivePlace();
   const merchants = directoryMerchants();
   const verifiedCount = state.merchants.filter((merchant) => merchant.coordinateSource !== 'fallback').length;
+  const categoryLabel = state.activeCategory === 'All' ? 'All categories' : state.activeCategory;
+  const scopeLabel = state.activePlace
+    ? `${state.activePlace.locationName} · ${categoryLabel}`
+    : categoryLabel;
+  elements.directoryScopeLabel.textContent = state.activePlace
+    ? `At ${state.activePlace.locationName}`
+    : 'In this map view';
+  elements.directoryPanel.setAttribute(
+    'aria-label',
+    state.activePlace
+      ? `Merchants at ${state.activePlace.locationName}`
+      : 'Merchants in current map view',
+  );
   elements.count.textContent = merchants.length.toLocaleString('en-SG');
-  setStatus(`${merchants.length.toLocaleString('en-SG')} shown · ${state.activeCategory === 'All' ? 'All categories' : state.activeCategory} · ${verifiedCount.toLocaleString('en-SG')} resolved total`);
+  setStatus(`${merchants.length.toLocaleString('en-SG')} shown · ${scopeLabel} · ${verifiedCount.toLocaleString('en-SG')} resolved total`);
   renderFilters();
   if (updateMarkers) renderMarkers(merchants);
   renderMerchantList(merchants);
