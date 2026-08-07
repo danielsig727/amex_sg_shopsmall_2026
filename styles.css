@@ -83,9 +83,15 @@ h1 { margin: 0; font-size: 1.46rem; letter-spacing: -.04em; }
 .merchant-card:hover, .merchant-card.is-selected { background: #f1f8fc; box-shadow: inset 3px 0 var(--blue); }
 .merchant-select:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
 .merchant-card > .gmap-link { position: absolute; top: 15px; right: 11px; }
-.merchant-location { justify-self: start; padding: 0; border: 0; background: transparent; color: #445a70; font-size: .79rem; font-weight: 700; text-align: left; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 2px; }
-.merchant-location:hover { color: var(--deep-blue); text-decoration-color: currentColor; }
-.merchant-location:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.place-action { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 5px 8px; border: 0; border-radius: 99px; background: #e8f3fb; color: var(--deep-blue); font-size: .75rem; font-weight: 750; line-height: 1.2; text-align: left; }
+.place-action:hover { background: #d9ecf7; }
+.place-action:active { background: #cce5f4; }
+.place-action:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.place-action-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.place-action-marker, .place-action-chevron { flex: none; }
+.merchant-location { justify-self: start; }
+.merchant-popup-place { margin: 2px 0 5px; }
+.merchant-popup-location { margin: 4px 0; }
 .gmap-link { color: var(--deep-blue); font-size: .72rem; font-weight: 750; text-decoration: underline; text-underline-offset: 2px; }
 .merchant-category { color: var(--blue); font-size: .65rem; font-weight: 800; letter-spacing: .09em; }
 .merchant-name { font-size: .92rem; line-height: 1.25; }

@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    <link rel="stylesheet" href="styles.css?v=11" />
+    <link rel="stylesheet" href="styles.css?v=12" />
   </head>
   <body>
     <header class="site-header">
@@ -63,7 +63,11 @@
         </button>
         <span class="merchant-category"></span>
         <strong class="merchant-name"></strong>
-        <button class="merchant-location" type="button"></button>
+        <button class="merchant-location place-action" type="button">
+          <span class="place-action-marker" aria-hidden="true">●</span>
+          <span class="place-action-label merchant-location-label"></span>
+          <span class="place-action-chevron" aria-hidden="true">›</span>
+        </button>
         <span class="merchant-address"></span>
         <span class="merchant-distance" hidden></span>
         <a class="gmap-link" target="_blank" rel="noopener noreferrer">gmap ↗</a>
@@ -72,6 +76,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script type="module" src="app.js?v=18"></script>
+    <script type="module" src="app.js?v=19"></script>
   </body>
 </html>

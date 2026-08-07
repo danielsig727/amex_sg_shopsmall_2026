@@ -8,12 +8,14 @@ import {
   filterDirectoryMerchants,
   formatDistance,
   googleMapsSearchUrl,
+  merchantPlaceFor,
   merchantPlaceGroups,
+  merchantPopupHtml,
   orderMerchants,
   placeSearchResults,
   requestMerchantSelection,
   revealClusteredMarker,
-} from './merchant-utils.mjs?v=6';
+} from './merchant-utils.mjs?v=7';
 
 const DEFAULT_VIEW = [1.3521, 103.8198];
 const DEFAULT_ZOOM = 11;
@@ -63,6 +65,8 @@ const state = {
   markersByMerchantId: new Map(),
 };
 map.addLayer(state.markerLayer);
+
+const boundPopupPlaceButtons = new WeakSet();
 
 function setStatus(message, isError = false) {
   elements.status.textContent = message;
@@ -125,18 +129,18 @@ function renderMarkers(merchants) {
   state.markerLayer.clearLayers();
   state.markersByMerchantId.clear();
   merchants.forEach((merchant) => {
+    const place = merchantPlaceFor(state.merchantPlaces, merchant);
     const icon = L.divIcon({ className: 'location-pin', html: '<span>•</span>', iconSize: [34, 34] });
     const marker = L.marker([merchant.latitude, merchant.longitude], { icon, title: `${merchant.name} at ${merchant.locationName}` });
-    const gmapUrl = googleMapsSearchUrl(merchant);
-    marker.bindPopup(`
-      <div class="merchant-popup">
-        <h2>${escapeHtml(merchant.name)}</h2>
-        <p>${escapeHtml(merchant.locationName)}</p>
-        <p>${escapeHtml(merchant.address)}</p>
-        <a class="gmap-link" href="${escapeHtml(gmapUrl)}" target="_blank" rel="noopener noreferrer">gmap ↗</a>
-      </div>
-    `);
+    marker.bindPopup(merchantPopupHtml(merchant, place));
     marker.on('click', () => selectMerchant(merchant.id));
+    marker.on('popupopen', ({ popup }) => {
+      const button = popup.getElement()?.querySelector('.merchant-popup-place');
+      if (!button || !place || boundPopupPlaceButtons.has(button)) return;
+
+      boundPopupPlaceButtons.add(button);
+      button.addEventListener('click', () => activateMerchantPlace(place));
+    });
     marker.on('popupclose', () => {
       if (clearMerchantSelection(state, merchant.id)) renderDirectory();
     });
@@ -193,17 +197,17 @@ function renderMerchantList(merchants) {
     const selectButton = card.querySelector('.merchant-select');
     const selectLabel = card.querySelector('.merchant-select-label');
     const locationButton = card.querySelector('.merchant-location');
-    const place = state.merchantPlaces.find(({ locationCell }) => (
-      locationCell === merchant.locationCell
-    ));
+    const locationLabel = locationButton.querySelector('.merchant-location-label');
+    const place = merchantPlaceFor(state.merchantPlaces, merchant);
     const gmapLink = card.querySelector('.gmap-link');
     selectLabel.textContent = `Show ${merchant.name} on the map`;
-    locationButton.textContent = merchant.locationName;
-    locationButton.setAttribute('aria-label', `Show all merchants at ${merchant.locationName}`);
+    locationButton.hidden = !place;
+    if (place) {
+      locationLabel.textContent = place.locationName;
+      locationButton.setAttribute('aria-label', `Show all merchants at ${place.locationName}`);
+      locationButton.addEventListener('click', () => activateMerchantPlace(place));
+    }
     selectButton.addEventListener('click', () => selectMerchant(merchant.id, true));
-    locationButton.addEventListener('click', () => {
-      if (place) activateMerchantPlace(place);
-    });
     gmapLink.href = googleMapsSearchUrl(merchant);
     gmapLink.setAttribute('aria-label', `Open ${merchant.name} in Google Maps`);
     fragment.append(card);
@@ -253,10 +257,6 @@ function renderDirectory({ updateMarkers = true } = {}) {
   if (updateMarkers) renderMarkers(merchants);
   renderMerchantList(merchants);
   renderSearchResults();
-}
-
-function escapeHtml(value) {
-  return value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
 }
 
 function flatSearchResults() {
