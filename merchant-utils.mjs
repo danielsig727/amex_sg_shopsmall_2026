@@ -58,6 +58,50 @@ export function merchantMatchesQuery(merchant, query) {
   return terms.every((term) => searchableText.includes(term));
 }
 
+export function filterDirectoryMerchants(merchants, {
+  activeCategory = 'All',
+  query = '',
+  activeLocationCell = null,
+  contains = () => true,
+} = {}) {
+  return merchants.filter((merchant) => (
+    merchant.coordinateSource !== 'fallback'
+    && (activeLocationCell
+      ? merchant.locationCell === activeLocationCell
+      : contains(merchant))
+    && (activeCategory === 'All' || merchant.category === activeCategory)
+    && merchantMatchesQuery(merchant, query)
+  ));
+}
+
+export function activatePlaceSearch(state, place) {
+  state.activePlace = {
+    locationCell: place.locationCell,
+    locationName: place.locationName,
+    locationType: place.locationType,
+    merchantCount: place.merchantCount,
+  };
+  state.activeCategory = 'All';
+  state.directoryQuery = '';
+  state.placeResults = [];
+  state.placeSearchError = '';
+  state.placeSearchPending = false;
+  state.activeSearchResult = -1;
+  state.searchRequestId += 1;
+  state.searchResultsDismissed = true;
+  state.selectedMerchant = null;
+  state.pendingRevealMerchant = null;
+}
+
+export function clearPlaceSearch(state) {
+  state.activePlace = null;
+  state.directoryQuery = '';
+  state.activeSearchResult = -1;
+  state.searchResultsDismissed = true;
+  state.selectedMerchant = null;
+  state.pendingRevealMerchant = null;
+}
+
 export function merchantSearchResults(merchants, query, limit = 6) {
   return merchants.filter((merchant) => merchantMatchesQuery(merchant, query)).slice(0, limit);
 }

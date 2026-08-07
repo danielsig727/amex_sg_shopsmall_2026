@@ -3,9 +3,12 @@ import test from 'node:test';
 
 import {
   activeResultIndex,
+  activatePlaceSearch,
   clearMerchantSelection,
+  clearPlaceSearch,
   compareMerchantsAlphabetically,
   distanceMeters,
+  filterDirectoryMerchants,
   formatDistance,
   googleMapsSearchUrl,
   merchantMatchesQuery,
@@ -14,6 +17,7 @@ import {
   merchantSearchResults,
   orderMerchants,
   placeSearchResults,
+  placeCoordinateBounds,
   requestMerchantSelection,
   revealClusteredMarker,
 } from '../merchant-utils.mjs';
@@ -87,6 +91,22 @@ const placeMerchants = [
     longitude: 103.82,
   },
 ];
+
+function placeSearchState() {
+  return {
+    activePlace: null,
+    activeCategory: 'RESTAURANT',
+    directoryQuery: 'cafe',
+    placeResults: [{ label: 'old result' }],
+    placeSearchError: 'old error',
+    placeSearchPending: true,
+    activeSearchResult: 2,
+    searchRequestId: 7,
+    searchResultsDismissed: false,
+    selectedMerchant: 'merchant-1',
+    pendingRevealMerchant: 'merchant-1',
+  };
+}
 
 test('googleMapsSearchUrl searches by merchant name and full address', () => {
   const url = googleMapsSearchUrl({
@@ -217,6 +237,88 @@ test('merchantPlaceSearchResults matches names case-insensitively and caps stabl
     ['westgate'],
   );
   assert.deepEqual(merchantPlaceSearchResults(groups, '   '), []);
+});
+
+test('filterDirectoryMerchants bypasses map bounds only for an exact active place', () => {
+  const outsideViewport = () => false;
+
+  assert.deepEqual(
+    filterDirectoryMerchants(placeMerchants, {
+      activeCategory: 'All',
+      query: '',
+      activeLocationCell: null,
+      contains: outsideViewport,
+    }),
+    [],
+  );
+  assert.deepEqual(
+    filterDirectoryMerchants(placeMerchants, {
+      activeCategory: 'All',
+      query: '',
+      activeLocationCell: 'westgate',
+      contains: outsideViewport,
+    }).map(({ id }) => id),
+    ['westgate-1', 'westgate-2'],
+  );
+});
+
+test('filterDirectoryMerchants applies category and text within the active place', () => {
+  const merchants = placeMerchants.map((merchant, index) => ({
+    ...merchant,
+    category: index === 0 ? 'RESTAURANT' : 'RETAIL',
+    address: index === 0 ? '3 Gateway Drive' : 'Other address',
+  }));
+
+  assert.deepEqual(
+    filterDirectoryMerchants(merchants, {
+      activeCategory: 'RESTAURANT',
+      query: 'anjappar',
+      activeLocationCell: 'westgate',
+      contains: () => false,
+    }).map(({ id }) => id),
+    ['westgate-1'],
+  );
+});
+
+test('placeCoordinateBounds covers every finite place coordinate', () => {
+  assert.deepEqual(placeCoordinateBounds(placeMerchants.slice(0, 2)), [
+    [1.3341, 103.7427],
+    [1.3342, 103.7428],
+  ]);
+  assert.equal(placeCoordinateBounds([]), null);
+});
+
+test('activatePlaceSearch resets competing filters and invalidates external search', () => {
+  const state = placeSearchState();
+  const westgate = merchantPlaceGroups(placeMerchants).find(({ locationCell }) => locationCell === 'westgate');
+
+  activatePlaceSearch(state, westgate);
+
+  assert.deepEqual(state.activePlace, {
+    locationCell: 'westgate',
+    locationName: 'Westgate',
+    locationType: 'In-Mall & Building',
+    merchantCount: 2,
+  });
+  assert.equal(state.activeCategory, 'All');
+  assert.equal(state.directoryQuery, '');
+  assert.deepEqual(state.placeResults, []);
+  assert.equal(state.placeSearchPending, false);
+  assert.equal(state.searchRequestId, 8);
+  assert.equal(state.selectedMerchant, null);
+  assert.equal(state.pendingRevealMerchant, null);
+});
+
+test('clearPlaceSearch removes place scope and scoped text without changing map state', () => {
+  const state = placeSearchState();
+  state.activePlace = { locationCell: 'westgate', locationName: 'Westgate' };
+
+  clearPlaceSearch(state);
+
+  assert.equal(state.activePlace, null);
+  assert.equal(state.directoryQuery, '');
+  assert.equal(state.selectedMerchant, null);
+  assert.equal(state.pendingRevealMerchant, null);
 });
 
 test('activeResultIndex wraps keyboard navigation and handles no results', () => {
