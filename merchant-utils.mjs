@@ -3,6 +3,37 @@ export function googleMapsSearchUrl(merchant) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(
+    /[&<>'"]/g,
+    (character) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;',
+    })[character],
+  );
+}
+
+export function merchantPopupHtml(merchant, place = null) {
+  const placeMarkup = place
+    ? `<button class="place-action merchant-popup-place" type="button" data-location-cell="${escapeHtml(place.locationCell)}" aria-label="Show all merchants at ${escapeHtml(place.locationName)}">
+        <span class="place-action-marker" aria-hidden="true">●</span>
+        <span class="place-action-label">${escapeHtml(place.locationName)}</span>
+        <span class="place-action-chevron" aria-hidden="true">›</span>
+      </button>`
+    : `<p class="merchant-popup-location">${escapeHtml(merchant.locationName)}</p>`;
+  const gmapUrl = googleMapsSearchUrl(merchant);
+
+  return `<div class="merchant-popup">
+    <h2>${escapeHtml(merchant.name)}</h2>
+    ${placeMarkup}
+    <p>${escapeHtml(merchant.address)}</p>
+    <a class="gmap-link" href="${escapeHtml(gmapUrl)}" target="_blank" rel="noopener noreferrer">gmap ↗</a>
+  </div>`;
+}
+
 export function revealClusteredMarker(markerLayer, marker, onVisible = () => marker.openPopup()) {
   markerLayer.zoomToShowLayer(marker, onVisible);
 }
@@ -157,6 +188,12 @@ export function merchantPlaceGroups(merchants) {
       coordinateBounds: placeCoordinateBounds(group.merchants),
     }))
     .sort(compareMerchantPlaces);
+}
+
+export function merchantPlaceFor(merchantPlaces, merchant) {
+  return merchantPlaces.find(({ locationCell }) => (
+    locationCell === merchant.locationCell
+  )) ?? null;
 }
 
 export function merchantPlaceSearchResults(places, query, limit = 6) {

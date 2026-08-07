@@ -13,8 +13,10 @@ import {
   formatDistance,
   googleMapsSearchUrl,
   merchantMatchesQuery,
+  merchantPlaceFor,
   merchantPlaceGroups,
   merchantPlaceSearchResults,
+  merchantPopupHtml,
   merchantSearchResults,
   orderMerchants,
   placeSearchResults,
@@ -228,6 +230,55 @@ test('merchantPlaceGroups deduplicates verified merchants by locationCell', () =
     [1.3341, 103.7427],
     [1.3342, 103.7428],
   ]);
+});
+
+test('merchantPlaceFor resolves only the exact locationCell group', () => {
+  const places = merchantPlaceGroups(placeMerchants);
+
+  assert.equal(
+    merchantPlaceFor(places, { locationCell: 'westgate', locationName: 'Wrong display text' })?.locationName,
+    'Westgate',
+  );
+  assert.equal(
+    merchantPlaceFor(places, { locationCell: 'missing', locationName: 'Westgate' }),
+    null,
+  );
+});
+
+test('merchantPopupHtml renders an escaped exact-place action', () => {
+  const merchant = {
+    name: 'Cafe <One>',
+    address: '3 Gateway Drive & Annex',
+    locationCell: 'westgate"cell',
+    locationName: 'Westgate & Mall',
+  };
+  const place = {
+    locationCell: 'westgate"cell',
+    locationName: 'Westgate & Mall',
+  };
+
+  const html = merchantPopupHtml(merchant, place);
+
+  assert.match(html, /class="place-action merchant-popup-place"/);
+  assert.match(html, /data-location-cell="westgate&quot;cell"/);
+  assert.match(html, /aria-label="Show all merchants at Westgate &amp; Mall"/);
+  assert.match(html, /Cafe &lt;One&gt;/);
+  assert.match(html, /3 Gateway Drive &amp; Annex/);
+  assert.doesNotMatch(html, /123 merchants/);
+});
+
+test('merchantPopupHtml falls back to non-interactive place text without a verified group', () => {
+  const html = merchantPopupHtml({
+    name: 'Unresolved Shop',
+    address: 'Unknown address',
+    locationCell: 'missing',
+    locationName: 'Missing Place',
+  });
+
+  assert.match(html, /class="merchant-popup-location"/);
+  assert.match(html, />Missing Place</);
+  assert.doesNotMatch(html, /merchant-popup-place/);
+  assert.doesNotMatch(html, /data-location-cell/);
 });
 
 test('merchantPlaceSearchResults matches names case-insensitively and caps stable results', () => {
