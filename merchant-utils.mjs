@@ -168,6 +168,25 @@ export function merchantPlaceSearchResults(places, query, limit = 6) {
     .slice(0, limit);
 }
 
+export function combinedSearchResults({
+  merchantPlaces,
+  merchants,
+  externalPlaces,
+  query,
+  activePlace,
+}) {
+  const localPlaces = activePlace
+    ? []
+    : merchantPlaceSearchResults(merchantPlaces, query)
+      .map((place) => ({ type: 'merchant-place', place }));
+  const matchingMerchants = merchantSearchResults(merchants, query)
+    .map((merchant) => ({ type: 'merchant', merchant }));
+  const mapPlaces = activePlace
+    ? []
+    : externalPlaces.map((place) => ({ type: 'place', place }));
+  return [...localPlaces, ...matchingMerchants, ...mapPlaces];
+}
+
 export function activeResultIndex(currentIndex, resultCount, direction) {
   if (!resultCount) return -1;
   return (currentIndex + direction + resultCount) % resultCount;

@@ -6,6 +6,7 @@ import {
   activatePlaceSearch,
   clearMerchantSelection,
   clearPlaceSearch,
+  combinedSearchResults,
   compareMerchantsAlphabetically,
   distanceMeters,
   filterDirectoryMerchants,
@@ -237,6 +238,32 @@ test('merchantPlaceSearchResults matches names case-insensitively and caps stabl
     ['westgate'],
   );
   assert.deepEqual(merchantPlaceSearchResults(groups, '   '), []);
+});
+
+test('combinedSearchResults orders local places before merchants and external places', () => {
+  const places = merchantPlaceGroups(placeMerchants);
+  const results = combinedSearchResults({
+    merchantPlaces: places,
+    merchants: placeMerchants,
+    externalPlaces: [{ label: 'Westgate Road, Singapore', latitude: 1.3, longitude: 103.7 }],
+    query: 'west',
+    activePlace: null,
+  });
+
+  assert.deepEqual(results.map(({ type }) => type), ['merchant-place', 'merchant', 'merchant', 'place']);
+});
+
+test('combinedSearchResults suppresses place suggestions while scoped', () => {
+  const places = merchantPlaceGroups(placeMerchants);
+  const results = combinedSearchResults({
+    merchantPlaces: places,
+    merchants: placeMerchants.slice(0, 2),
+    externalPlaces: [{ label: 'Westgate Road, Singapore', latitude: 1.3, longitude: 103.7 }],
+    query: 'cafe',
+    activePlace: { locationCell: 'westgate' },
+  });
+
+  assert.deepEqual(results.map(({ type }) => type), ['merchant']);
 });
 
 test('filterDirectoryMerchants bypasses map bounds only for an exact active place', () => {
