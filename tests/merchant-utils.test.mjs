@@ -9,6 +9,8 @@ import {
   formatDistance,
   googleMapsSearchUrl,
   merchantMatchesQuery,
+  merchantPlaceGroups,
+  merchantPlaceSearchResults,
   merchantSearchResults,
   orderMerchants,
   placeSearchResults,
@@ -40,6 +42,49 @@ const discoveryMerchants = [
     address: '200 VICTORIA STREET SINGAPORE 188021',
     latitude: 1.2996,
     longitude: 103.8554,
+  },
+];
+
+const placeMerchants = [
+  {
+    id: 'westgate-1',
+    name: 'Anjappar',
+    locationCell: 'westgate',
+    locationName: 'Westgate',
+    locationType: 'In-Mall & Building',
+    coordinateSource: 'onemap',
+    latitude: 1.3341,
+    longitude: 103.7427,
+  },
+  {
+    id: 'westgate-2',
+    name: 'Cafe One',
+    locationCell: 'westgate',
+    locationName: 'Westgate',
+    locationType: 'In-Mall & Building',
+    coordinateSource: 'user-confirmed',
+    latitude: 1.3342,
+    longitude: 103.7428,
+  },
+  {
+    id: 'arab-street-1',
+    name: 'Textiles',
+    locationCell: 'arab street',
+    locationName: 'Arab Street',
+    locationType: 'Street',
+    coordinateSource: 'onemap',
+    latitude: 1.3020,
+    longitude: 103.8590,
+  },
+  {
+    id: 'fallback-place',
+    name: 'Unresolved',
+    locationCell: 'fallback place',
+    locationName: 'Fallback Place',
+    locationType: 'Street',
+    coordinateSource: 'fallback',
+    latitude: 1.35,
+    longitude: 103.82,
   },
 ];
 
@@ -148,6 +193,30 @@ test('placeSearchResults removes malformed coordinates and caps suggestions', ()
     latitude: 1.302,
     longitude: 103.859,
   }]);
+});
+
+test('merchantPlaceGroups deduplicates verified merchants by locationCell', () => {
+  const groups = merchantPlaceGroups(placeMerchants);
+
+  assert.deepEqual(groups.map(({ locationCell, merchantCount }) => ({ locationCell, merchantCount })), [
+    { locationCell: 'arab street', merchantCount: 1 },
+    { locationCell: 'westgate', merchantCount: 2 },
+  ]);
+  assert.deepEqual(groups[1].merchants.map(({ id }) => id), ['westgate-1', 'westgate-2']);
+  assert.deepEqual(groups[1].coordinateBounds, [
+    [1.3341, 103.7427],
+    [1.3342, 103.7428],
+  ]);
+});
+
+test('merchantPlaceSearchResults matches names case-insensitively and caps stable results', () => {
+  const groups = merchantPlaceGroups(placeMerchants);
+
+  assert.deepEqual(
+    merchantPlaceSearchResults(groups, 'WEST', 1).map(({ locationCell }) => locationCell),
+    ['westgate'],
+  );
+  assert.deepEqual(merchantPlaceSearchResults(groups, '   '), []);
 });
 
 test('activeResultIndex wraps keyboard navigation and handles no results', () => {

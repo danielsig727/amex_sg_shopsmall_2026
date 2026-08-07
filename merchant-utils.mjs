@@ -26,10 +26,20 @@ const merchantCollator = new Intl.Collator('en-SG', {
   sensitivity: 'base',
   numeric: true,
 });
+const placeCollator = new Intl.Collator('en-SG', {
+  sensitivity: 'base',
+  numeric: true,
+});
 const EARTH_RADIUS_METRES = 6_371_000;
 
 function normalizeSearchText(value) {
   return String(value ?? '').normalize('NFKC').toLocaleLowerCase('en-SG');
+}
+
+function compareMerchantPlaces(left, right) {
+  return placeCollator.compare(left.locationName, right.locationName)
+    || placeCollator.compare(left.locationType, right.locationType)
+    || placeCollator.compare(left.locationCell, right.locationCell);
 }
 
 function radians(degrees) {
@@ -60,6 +70,57 @@ export function placeSearchResults(places, limit = 4) {
       longitude: Number(place.lon),
     }))
     .filter((place) => place.label && Number.isFinite(place.latitude) && Number.isFinite(place.longitude))
+    .slice(0, limit);
+}
+
+export function placeCoordinateBounds(merchants) {
+  const coordinates = merchants
+    .map(({ latitude, longitude }) => [Number(latitude), Number(longitude)])
+    .filter(([latitude, longitude]) => Number.isFinite(latitude) && Number.isFinite(longitude));
+  if (!coordinates.length) return null;
+
+  const latitudes = coordinates.map(([latitude]) => latitude);
+  const longitudes = coordinates.map(([, longitude]) => longitude);
+  return [
+    [Math.min(...latitudes), Math.min(...longitudes)],
+    [Math.max(...latitudes), Math.max(...longitudes)],
+  ];
+}
+
+export function merchantPlaceGroups(merchants) {
+  const groups = new Map();
+  merchants.forEach((merchant) => {
+    if (
+      merchant.coordinateSource === 'fallback'
+      || !merchant.locationCell
+      || !merchant.locationName
+    ) return;
+
+    const group = groups.get(merchant.locationCell) ?? {
+      locationCell: merchant.locationCell,
+      locationName: merchant.locationName,
+      locationType: merchant.locationType,
+      merchantCount: 0,
+      merchants: [],
+    };
+    group.merchantCount += 1;
+    group.merchants.push(merchant);
+    groups.set(merchant.locationCell, group);
+  });
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      coordinateBounds: placeCoordinateBounds(group.merchants),
+    }))
+    .sort(compareMerchantPlaces);
+}
+
+export function merchantPlaceSearchResults(places, query, limit = 6) {
+  const normalizedQuery = normalizeSearchText(query).trim();
+  if (!normalizedQuery) return [];
+  return places
+    .filter(({ locationName }) => normalizeSearchText(locationName).includes(normalizedQuery))
+    .toSorted(compareMerchantPlaces)
     .slice(0, limit);
 }
 
