@@ -7,8 +7,11 @@ A static prototype for browsing the supplied Amex small-merchant directory on a 
 Generate the browser data from the source CSV:
 
 ```sh
+node scripts/refresh-merchant-list.mjs
 node scripts/build-data.mjs
 ```
+
+`refresh-merchant-list.mjs` downloads the JSON dataset used by the [Amex Singapore Shop Small merchant directory](https://www.americanexpress.com/en-sg/benefits/shop-small/merchant-directory/) and writes the source CSV without changing its fields or values.
 
 To refresh the coordinate cache, obtain a OneMap API token and run:
 

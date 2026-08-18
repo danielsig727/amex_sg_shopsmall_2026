@@ -95,15 +95,15 @@ test('different units resolved to one building coordinate receive distinct map p
   );
 });
 
-test('unresolved geocodes remain explicitly unverified', () => {
+test('explicitly unresolved geocodes are omitted from the map', () => {
   const csv = [
     'mall_or_street,mall_or_street_name,merchant_category,merchant_name,address',
     'Street,Unknown Street,RETAIL,Test Merchant,1 UNKNOWN STREET SINGAPORE 000000',
   ].join('\n');
   const geocodes = { 'address:1 unknown street singapore 000000': { unresolved: true } };
-  const [merchant] = buildMerchantDataset(csv, geocodes).merchants;
+  const { merchants } = buildMerchantDataset(csv, geocodes);
 
-  assert.equal(merchant.coordinateSource, 'fallback');
+  assert.equal(merchants.length, 0);
 });
 
 test('street validation includes a missing street name and rejects an unrelated match', () => {

@@ -1,5 +1,76 @@
 {
-  "total": 1104,
-  "resolved": 1104,
-  "unresolved": []
+  "total": 1064,
+  "resolved": 1058,
+  "unresolved": [
+    {
+      "key": "address:17 temple street #01-02 singapore 058563",
+      "query": "17 TEMPLE STREET",
+      "attemptedQueries": [
+        "17 TEMPLE STREET",
+        "BINLIN LINEN MANUFACTURERS Temple Street",
+        "BINLIN LINEN MANUFACTURERS"
+      ],
+      "validationVersion": 6,
+      "unresolved": true
+    },
+    {
+      "key": "address:5 new bugis street fsl-15/16 singapore 188869",
+      "query": "5 NEW BUGIS STREET FSL-15/16",
+      "attemptedQueries": [
+        "5 NEW BUGIS STREET FSL-15/16",
+        "5 NEW BUGIS STREET",
+        "5 Bugis Street",
+        "FRAGRANCE Bugis Street",
+        "FRAGRANCE"
+      ],
+      "validationVersion": 6,
+      "unresolved": true
+    },
+    {
+      "key": "address:51 amoy street singapore 069877",
+      "query": "51 AMOY STREET",
+      "attemptedQueries": [
+        "51 AMOY STREET",
+        "GOOD LUCK BARBERS Amoy Street",
+        "GOOD LUCK BARBERS"
+      ],
+      "validationVersion": 6,
+      "unresolved": true
+    },
+    {
+      "key": "address:52 queen street #01-abfl01 singapore 188539",
+      "query": "52 QUEEN STREET Bugis Village",
+      "attemptedQueries": [
+        "52 QUEEN STREET Bugis Village",
+        "52 QUEEN STREET",
+        "52 Bugis Village",
+        "JOE'S OUTLET Bugis Village",
+        "JOE'S OUTLET"
+      ],
+      "validationVersion": 6,
+      "unresolved": true
+    },
+    {
+      "key": "address:116 amoy street #01-02a singapore 069936",
+      "query": "116 AMOY STREET",
+      "attemptedQueries": [
+        "116 AMOY STREET",
+        "NIXTA Amoy Street",
+        "NIXTA"
+      ],
+      "validationVersion": 6,
+      "unresolved": true
+    },
+    {
+      "key": "address:54 bussorah street singapore 199470",
+      "query": "54 BUSSORAH STREET",
+      "attemptedQueries": [
+        "54 BUSSORAH STREET",
+        "TABBOULEH Bussorah Street",
+        "TABBOULEH"
+      ],
+      "validationVersion": 6,
+      "unresolved": true
+    }
+  ]
 }

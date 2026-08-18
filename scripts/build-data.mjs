@@ -118,7 +118,7 @@ export function buildMerchantDataset(csvText, geocodes = {}) {
           cellLongitude,
         };
     })
-    .filter((merchant) => merchant.name && merchant.address);
+    .filter((merchant) => merchant.name && merchant.address && !geocodes[merchant.coordinateKey]?.unresolved);
 
   const positionByCoordinate = new Map();
   const merchants = merchantCells.map((merchant) => {

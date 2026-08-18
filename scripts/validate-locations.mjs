@@ -13,6 +13,9 @@ const SEARCH_URL = 'https://www.onemap.gov.sg/api/common/elastic/search';
 const VALIDATION_VERSION = 6;
 const token = process.env.AMEX_ONEMAP_TOKEN;
 const maxTargets = Number(process.argv.find((argument) => argument.startsWith('--limit='))?.slice(8) ?? Infinity);
+const requestedConcurrency = Number(process.argv.find((argument) => argument.startsWith('--concurrency='))?.slice(14) ?? 1);
+const concurrency = Number.isFinite(requestedConcurrency) ? Math.max(1, Math.floor(requestedConcurrency)) : 1;
+const persistEvery = 25;
 
 const pause = (milliseconds) => new Promise((resolvePause) => setTimeout(resolvePause, milliseconds));
 const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -66,6 +69,7 @@ for (const merchant of current.merchants) {
 const cache = await readJson(GEOCODES_PATH, { targets: {} });
 const overrides = await readJson(OVERRIDES_PATH, { targets: {} });
 let processed = 0;
+const pending = [];
 for (const [key, merchant] of targets) {
   if (overrides.targets[key]) {
     cache.targets[key] = { ...overrides.targets[key], validationVersion: VALIDATION_VERSION, override: true };
@@ -76,19 +80,32 @@ for (const [key, merchant] of targets) {
   const currentQueries = validationQueries(merchant);
   const usedRemovedVenueFallback = cached?.validationVersion === 3 && !currentQueries.includes(cached.query);
   if (cached && cacheMatchesMerchantLocation && !usedRemovedVenueFallback && (!cached.unresolved || cached.validationVersion === VALIDATION_VERSION)) continue;
-  if (processed >= maxTargets) break;
-  cache.targets[key] = await geocode(currentQueries, merchant);
-  processed += 1;
-  process.stdout.write(`Validated ${Object.keys(cache.targets).length}/${targets.size}\r`);
-  await mkdir(dirname(GEOCODES_PATH), { recursive: true });
-  await writeFile(GEOCODES_PATH, `${JSON.stringify(cache)}\n`);
-  await pause(220);
+  if (pending.length >= maxTargets) break;
+  pending.push([key, merchant, currentQueries]);
 }
+
+let nextPending = 0;
+async function validatePending() {
+  while (nextPending < pending.length) {
+    const [key, merchant, queries] = pending[nextPending];
+    nextPending += 1;
+    cache.targets[key] = await geocode(queries, merchant);
+    processed += 1;
+    process.stdout.write(`Validated ${processed}/${pending.length}; cached ${Object.keys(cache.targets).length}/${targets.size}\r`);
+    if (processed % persistEvery === 0) {
+      await mkdir(dirname(GEOCODES_PATH), { recursive: true });
+      await writeFile(GEOCODES_PATH, `${JSON.stringify(cache)}\n`);
+    }
+    await pause(220);
+  }
+}
+
+await Promise.all(Array.from({ length: Math.min(concurrency, pending.length) }, validatePending));
 
 await mkdir(dirname(GEOCODES_PATH), { recursive: true });
 await writeFile(GEOCODES_PATH, `${JSON.stringify(cache)}\n`);
 
-const records = Object.entries(cache.targets).map(([key, value]) => ({ key, ...value }));
+const records = Array.from(targets.keys()).map((key) => ({ key, ...cache.targets[key] }));
 const report = {
   total: targets.size,
   resolved: records.filter((record) => !record.unresolved).length,
